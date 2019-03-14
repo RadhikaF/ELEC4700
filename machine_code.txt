@@ -1,0 +1,31 @@
+addi $0, $15, 5
+addi $1, $15, 5
+jal 6
+add $2, $0, $1
+add $3, $0, $1
+beq $0, $1, 6
+addi $2, $0, 2
+addi $3, $0, 3
+jal 11
+addi $5, $0, 5
+jal jta
+addiu $6, $0, 5
+addi $1, $15, 2
+beq $6, $7, 5
+addi $7, $0, 5
+addi $0, $15, 1
+sllv $3, $1, 2
+jal jta
+add $4, $2, $0
+sllv $5, $4, 1
+sub $6, $3, $4
+mult $6, $2
+mflo $7
+div $7, $4
+mflo $1
+mfhi $2
+slt $7, $4, $2
+slt $6, $2, $4
+addiu $2, $0, 11
+sub $3, $4, $2
+blank 
