@@ -2,7 +2,7 @@
 // Joshua Beverley & Radhika Feron
 // Main module file (clock_pipe.sv), clock, registers
 
-module Assignment_v1(
+module elec4700(
 	input logic [9:0] SW,
 	input logic [3:0] KEY,
 	//input logic CLOCK_27,
@@ -143,7 +143,7 @@ module Assignment_v1(
 	assign LEDR[7:4] = pc_out;
 	assign LEDR[8] = jump_check_D;
 	assign LEDR[9] = jump_en_D;
-	assign LEDG[4:0] = pc_F;
+	//assign LEDG[4:0] = pc_F;
 	//assign LEDR[10] = Stall_F;
   
 endmodule
