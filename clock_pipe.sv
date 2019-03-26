@@ -6,7 +6,7 @@ module elec4700(
 	input logic [9:0] SW,
 	input logic [3:0] KEY,
 	//input logic CLOCK_27,
-	//input logic CLOCK_50,
+	//input logic CLOCK_125_p,
 	output logic [9:0] LEDR,
 	output logic [7:0] LEDG,
 	output logic [6:0] HEX0,HEX1,HEX2,HEX3
@@ -15,7 +15,7 @@ module elec4700(
 	logic [31:0] q;		// clock stuff
 	logic clk;
 	//assign clk = q[25];     // Uncomment these lines and choose the appropriate bit of q if a slower clock is needed
-	//assign clk = CLOCK_50;
+	//assign clk = CLOCK_125_p;
 	assign clk = SW[9];
    assign LEDG[0] = clk;   // Can see the clock if it is slow enough
 	//assign clk = q[25];
@@ -76,7 +76,7 @@ module elec4700(
 	assign rd_D = instruction_D[3:0]; 		//same as imm and B1offset and MemImm
 	
 	regfile test_read(clk, WriteEnable_W, WriteRA_E, stack_D, rs_D, rt_D, write_value_W, ra_E, rd_value_W, 
-			HEX0,HEX1,HEX2,HEX3,HEX4,HEX5,HEX6,HEX7, rs_value_D, rt_value_D, latest_ra_D);		// gets rs, rt values and writes rd value if we = 1 
+			HEX0,HEX1,HEX2,HEX3, rs_value_D, rt_value_D, latest_ra_D);		// gets rs, rt values and writes rd value if we = 1 
 	priority_decoder main(instruction_D[17:13], Ji, B1, B2, Ii, Mi, Ri);		// priority decoder for main instruction opcode
 	priority_decoder_Rtype Rtype(instruction_D[16:13], Excep, OutputA, MulDiv, Shift, ALU_op);		// priority decoder for R type
 	
@@ -134,17 +134,8 @@ module elec4700(
 	assign rd_value_W = MemToReg_W ? rd_RAM_W:write_out_W;
 	
 	//***Other***//
-	//assign LEDR[5:0] = write_out_E[5:0];
-	//assign LEDR[11:6] = ALU_B_E[5:0];
-	//assign LEDR[17:12] = rs_value_E[5:0];
-	//assign LEDR[16:14] = rs_value_forward_D;
-	//assign LEDR[13:11] = rt_value_forward_D;
-	assign LEDR[3:0] = JumpBranch_D;
-	assign LEDR[7:4] = pc_out;
-	assign LEDR[8] = jump_check_D;
-	assign LEDR[9] = jump_en_D;
-	//assign LEDG[4:0] = pc_F;
-	//assign LEDR[10] = Stall_F;
+	assign LEDR[4:0] = pc_out;
+
   
 endmodule
 
@@ -292,7 +283,7 @@ module regfile(
 	input logic [1:0] stack,
 	input logic [3:0] RA1, RA2, WA, RA,
 	input logic [31:0] WD,
-	output logic [6:0] HEX0,HEX1,HEX2,HEX3,HEX4,HEX5,HEX6,HEX7,
+	output logic [6:0] HEX0,HEX1,HEX2,HEX3,
 	output logic [31:0] RD1, RD2, RA_OUT);
 	
 	logic [16:0] rf[31:0];
