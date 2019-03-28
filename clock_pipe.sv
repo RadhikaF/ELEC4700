@@ -23,6 +23,9 @@ module elec4700(
 	//***Fetch Define Variables***//
 	logic Stall_F, init_flush_F, blank_F;
 	logic [4:0] pc_F, pc_out;
+	initial begin
+			pc_F <= 5'b0;
+	end
 	logic [17:0] instruction_F;
 	
 	//***Decode Define Variables***//
@@ -57,7 +60,6 @@ module elec4700(
 	logic [31:0] write_out_W, rd_RAM_W, rd_value_W, ra_W;			
   
 	//***Fetch***//
-	//********************************************ADD ENABLE
 	assign init_flush_F = (|pc_F);
 	counter32 #(5) clock(clk, Stall_F, jump_check_D, blank_F, pc_F, pc_out, pc_F);
 	ROM_test #(5,18) myrom(pc_F,instruction_F);		// gets instruction from text file
@@ -134,7 +136,13 @@ module elec4700(
 	assign rd_value_W = MemToReg_W ? rd_RAM_W:write_out_W;
 	
 	//***Other***//
-	assign LEDR[4:0] = pc_out;
+	assign LEDR[4:0] = pc_D;
+	assign LEDR[9:5] = pc_F;
+	assign LEDG[7] = Stall_F;
+	assign LEDG[6] = jump_check_D;
+	assign LEDG[5] = blank_F;
+	//assign LEDR[9:0] = instruction_F[17:8];
+	//assign LEDG[7:1] = instruction_D[7:1];	
 
   
 endmodule
@@ -271,6 +279,7 @@ module ROM_test #(parameter clock_length=4,instruction_width=18) (
 	output logic [instruction_width-1:0] Dout);
 
 	logic [instruction_width-1:0] mem[2**clock_length-1:0];    //18 bit wide registers (16 of them by default)
+	
 	assign Dout = mem[Ad];
   
 	initial begin
@@ -311,15 +320,15 @@ endmodule
 module counter32 #(parameter clock_length=6) (
 	input logic clk, en, JUMP, blank, input logic [clock_length-1:0] input_q, jump_dest,
 	output logic [clock_length-1:0] q);
-
-	always_ff @(posedge clk)
+	//FIX THIS, REMOVE CLOCK BLOCK, USE MUX TO PICK FROM IF/ELSE
+	//always_ff @(posedge clk)
 	if (~en) begin
 		if (blank)
-		q <= (input_q);
+		q = (input_q);
 		else if (JUMP)
-		q <= jump_dest;
+		q = jump_dest;
 		else
-		q <= (input_q + 1);
+		q = (input_q + 1);
 	end
 endmodule
 
