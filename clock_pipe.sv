@@ -148,9 +148,15 @@ module FDRegister(
 	input logic clk, en, clr, input logic [4:0] PCF, input logic [17:0] instruction_F,
 	output logic [4:0] PCD, output logic [17:0] instruction_D, output logic JumpFlush_D);
 	
+	initial begin
+		PCD = 5'b0;
+		instruction_D = 18'b0;
+		JumpFlush_D = 1'b1;
+	end
+	
 	always_ff @(posedge clk) begin
 		if (clr) begin
-			PCD <= 4'd0;
+			PCD <= 5'd0;
 			instruction_D <= 18'd0;
 			JumpFlush_D <= 1'b1;
 		end //if (clr)
@@ -176,6 +182,31 @@ module DERegister(
 	output logic [4:0] MemOpE,
 	output logic [31:0] RD1E, RD2E, ra_E);
 
+	initial begin
+		WriteRAE = 1'b0;
+		alu_enE = 1'b0;
+		muldiv_enE = 1'b0;
+		shift_enE = 1'b0;
+		ALUFunctE = 4'd0;
+		MulDivFunctE = 3'd0;
+		ShiftFunctE = 3'd0;
+		MemOpE = 5'd0;
+		WriteCheckE = 1'd0;
+		lui_en_E = 1'd0;
+		WriteEnableE = 1'd0;
+		MemtoRegE = 1'b0; 
+		rtE = 4'd0;
+		rsE = 4'd0;
+		rdE = 4'd0;
+		RD1E = 32'd0;
+		RD2E = 32'd0;
+		ra_E = 32'd0;
+		AluSrc2_E = 1'b0;
+		AluSrc1_E = 1'b0;
+		AluSrc0_E = 1'b0;
+		forwarding_disable_rs_E = 1'b0;
+	end
+	
 	always_ff @(posedge clk) begin
 		if (stack_add_D) stack_out <= stack + 1'b1;
 		else if (stack_subtract_D) stack_out <= stack - 1'b1;
@@ -240,6 +271,17 @@ module EMRegister(
 	output logic [4:0] MemOp_M,
 	output logic [31:0] write_out_M, ra_M, rt_value_M);
 
+	initial begin
+		WriteEnable_M = 1'b0;
+		MemToReg_M = 1'b0;
+		WriteRA_M = 1'b0;
+		write_value_M = 4'b0;
+		MemOp_M = 5'b0;
+		write_out_M = 32'b0;
+		ra_M = 32'b0;
+		rt_value_M = 32'b0;
+	end
+	
 	always_ff @(posedge clk) begin
 		WriteEnable_M <= WriteEnable_E;
 		MemToReg_M <= MemToReg_E;
@@ -250,6 +292,7 @@ module EMRegister(
 		ra_M <= ra_E;
 		rt_value_M <= rt_value_E;
 	end
+	
 endmodule // EMRegister
 
 module MWRegister(
@@ -260,6 +303,16 @@ module MWRegister(
 	output logic [3:0] write_value_W, 
 	output logic [31:0] write_out_W, rd_RAM_W, ra_W);
 
+	initial begin
+		WriteEnable_W = 1'b0;
+		MemToReg_W = 1'b0;
+		WriteRA_W =  1'b0;
+		write_value_W = 4'b0;
+		write_out_W = 32'b0;
+		rd_RAM_W = 32'b0;
+		ra_W = 32'b0;
+	end
+	
 	always_ff @(posedge clk) begin
 		WriteEnable_W <= WriteEnable_M;
 		MemToReg_W <= MemToReg_M;
@@ -319,16 +372,17 @@ module counter32 #(parameter clock_length=6) (
 	output logic [clock_length-1:0] q);
 	//FIX THIS, REMOVE CLOCK BLOCK, USE MUX TO PICK FROM IF/ELSE
 	initial begin
-		q <= 5'b0;
+		q = 5'b0;
 	end
+	
 	always_ff @(posedge clk)
 	if (~en) begin
 		if (blank)
-		q = (input_q);
+		q <= (input_q);
 		else if (JUMP)
-		q = jump_dest;
+		q <= jump_dest;
 		else
-		q = (input_q + 1);
+		q <= (input_q + 1);
 	end
 	//logic lo;
    //assign lo = JUMP ? {jump_dest}:{input_q + 1};
@@ -345,4 +399,6 @@ module seven_segment(input logic [3:0] switch, output logic [6:0] hex_disp);	// 
 	assign hex_disp[4] = ~((switch[3] & switch[2]) | (~switch[2] & ~switch[0]) | (switch[3] & ~switch[0]) | (switch[3] & switch[1]) | (switch[1] & ~switch[0]));	// sum of products for the bottom left segment
 	assign hex_disp[5] = ~((switch[3] & ~switch[2]) | (~switch[1] & ~switch[0]) | (switch[3] & switch[1]) | (switch[3] & ~switch[0]) | (switch[2] & ~switch[0]) | (~switch[3] & switch[2] & ~switch[1]));	// sum of products for the top left segment
 	assign hex_disp[6] = ~((switch[3] & switch[1]) | (switch[3] & switch[0]) | (~switch[2] & switch[1]) | (switch[3] & ~switch[2]) | (switch[1] & ~switch[0]) | (~switch[3] & switch[2] & ~switch[1]));	// sum of products for the middle segment
+
 endmodule
+	
