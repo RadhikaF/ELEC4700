@@ -23,9 +23,6 @@ module elec4700(
 	//***Fetch Define Variables***//
 	logic Stall_F, init_flush_F, blank_F;
 	logic [4:0] pc_F, pc_out;
-	initial begin
-			pc_F <= 5'b0;
-	end
 	logic [17:0] instruction_F;
 	
 	//***Decode Define Variables***//
@@ -321,7 +318,10 @@ module counter32 #(parameter clock_length=6) (
 	input logic clk, en, JUMP, blank, input logic [clock_length-1:0] input_q, jump_dest,
 	output logic [clock_length-1:0] q);
 	//FIX THIS, REMOVE CLOCK BLOCK, USE MUX TO PICK FROM IF/ELSE
-	//always_ff @(posedge clk)
+	initial begin
+		q <= 5'b0;
+	end
+	always_ff @(posedge clk)
 	if (~en) begin
 		if (blank)
 		q = (input_q);
@@ -330,6 +330,11 @@ module counter32 #(parameter clock_length=6) (
 		else
 		q = (input_q + 1);
 	end
+	//logic lo;
+   //assign lo = JUMP ? {jump_dest}:{input_q + 1};
+   //assign q = blank ? {input_q}:{lo};
+   
+	
 endmodule
 
 module seven_segment(input logic [3:0] switch, output logic [6:0] hex_disp);	// seven segment display module from first assignment, input: hex number in 4 bit bus binary to be displayed, output: 7 bit bus for the seven segment display
