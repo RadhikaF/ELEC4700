@@ -3,8 +3,8 @@
 // Jump, Branch and R-type instructions
 
 module jump #(parameter clock_length = 4, f = 5) (
-	input logic [31:0] rs_value, rt_value, ra_value, input logic [3:0] constant, input logic [clock_length-1:0] clock, input logic [f-1:0] F, input logic jump_enable,
-	output logic [clock_length-1:0] pc, output logic [3:0] ra, output logic final_check);
+	input logic [31:0] rs_value, rt_value, input logic [4:0] ra_value, constant, input logic [clock_length-1:0] clock, input logic [f-1:0] F, input logic jump_enable,
+	output logic [clock_length-1:0] pc, output logic [4:0] ra, output logic final_check);
 	
 	logic [4:0] jump_to_if_equal, jump_to_if_branch, jump_to_if_not_ra;
 	logic branch, equal_check, lt_ge_check, le_gt_check;
