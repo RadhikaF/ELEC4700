@@ -218,7 +218,7 @@ instruction_dictionary = {
     "div": "1001110", 
     "mthi": "1000100",     #output a
     "mtlo": "1000110", 
-    "jr": "1000000",   #jump r-type
+    "jr": "1000000",   #jump r-type 
     "jalr": "1000010", 
     "lb": "0100000",   #memory
     "lh": "0100010", 
