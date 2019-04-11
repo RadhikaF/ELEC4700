@@ -23,7 +23,7 @@ module elec4700(
 	//***Fetch Define Variables***//
 	logic Stall_F, init_flush_F, blank_F;
 	logic [4:0] pc_F, pc_out;
-	logic [17:0] instruction_F;
+	logic [31:0] instruction_F;
 	
 	//***Decode Define Variables***//
 	logic Ji, B1, B2, Ii, Mi, Ri, Excep, OutputA, MulDiv, Shift, ALU_op, 		// result from priority decoders
@@ -31,35 +31,33 @@ module elec4700(
 			jump_check_D, Stall_D, Jump_Flush_D, lui_en_D, forwarding_disable_rs_D, branchstall_D, stack_add_D, stack_subtract_D; // results from control module
 	logic [1:0] forwardA_D, forwardB_D, stack_D;
 	logic [2:0] MulDivFunct_D, ShiftFunct_D; 		// results from control module
-	logic [3:0] rs_D, rt_D, rd_D,	ALUFunct_D;	// 4 bit numbers as used in opcodes
-	logic [4:0] MemOp_D, JumpBranch_D, pc_D;
+	logic [3:0] ALUFunct_D;	// 4 bit numbers as used in opcodes
+	logic [4:0] rs_D, rt_D, rd_D, MemOp_D, JumpBranch_D, pc_D;
 	logic [5:0] opcode_D;
-	logic [17:0] instruction_D;
-	logic [31:0] rs_value_D, rt_value_D, ra_D, rs_value_forward_D, rt_value_forward_D, latest_ra_D;
+	logic [31:0] instruction_D, rs_value_D, rt_value_D, ra_D, rs_value_forward_D, rt_value_forward_D, latest_ra_D;
 	
 	//***Execute Define Variables***//
 	logic alu_en_E, muldiv_en_E, shift_en_E, WriteEnable_E, WriteCheck_E, WriteRA_E, MemToReg_E, AluSrc2_E, AluSrc1_E, AluSrc0_E, 
 			Flush_E, lui_en_E, forward_3rd_E;
 	logic [2:0] MulDivFunct_E, ShiftFunct_E; 		// results from control module
-	logic [3:0] rs_E, rt_E, rd_E, ALUFunct_E, write_value_E;
-	logic [4:0] MemOp_E;
+	logic [3:0] ALUFunct_E, ;
+	logic [4:0] rs_E, rt_E, rd_E, write_value_E, MemOp_E;
 	logic [31:0] write_out_E, ALU_B_E, rs_value_E, rt_value_E, hi_E, lo_E, mul_div_out_E, shift_out_E, ALU_out_E, ra_E, ALU_A_E;
 	
 	//***Memory Define Variables***//
 	logic WriteEnable_M, MemToReg_M, MemEn_M, WriteRA_M;
-	logic [3:0] write_value_M;
-	logic [4:0] MemOp_M;
+	logic [4:0] write_value_M, MemOp_M;
 	logic [31:0] write_out_M, rd_RAM_M, MemIn_M, MOut_M, ra_M, rt_value_M;
 	
 	//***Write Define Variables***//
 	logic WriteEnable_W, MemToReg_W, WriteRA_W;
-	logic [3:0] write_value_W;
+	logic [4:0] write_value_W;
 	logic [31:0] write_out_W, rd_RAM_W, rd_value_W, ra_W;			
   
 	//***Fetch***//
 	assign init_flush_F = (|pc_F);
 	counter32 #(5) clock(clk, Stall_F, jump_check_D, blank_F, pc_F, pc_out, pc_F);
-	ROM_test #(5,18) myrom(pc_F,instruction_F);		// gets instruction from text file
+	ROM_test #(5,32) myrom(pc_F,instruction_F);		// gets instruction from text file
 	assign blank_F = ~(|instruction_F);
 
 	// Fetch to Decode on Clock edge
@@ -68,11 +66,11 @@ module elec4700(
 	//***Decode***//
 	
 	// store register instruction to rs, rt, rd
-	assign opcode_D = instruction_D[17:12]; 
-	assign extra_jump = instruction_D[11];
-	assign rs_D = instruction_D[11:8];    //same as shamt
-	assign rt_D = instruction_D[7:4];
-	assign rd_D = instruction_D[3:0]; 		//same as imm and B1offset and MemImm
+	assign opcode_D = instruction_D[31:26]; 
+	assign extra_jump = instruction_D[25];
+	assign rs_D = instruction_D[24:20];    //same as shamt
+	assign rt_D = instruction_D[19:15];
+	assign rd_D = instruction_D[14:10]; 		//same as imm and B1offset and MemImm
 	
 	regfile test_read(clk, WriteEnable_W, WriteRA_E, stack_D, rs_D, rt_D, write_value_W, ra_E, rd_value_W, 
 			HEX0,HEX1,HEX2,HEX3, rs_value_D, rt_value_D, latest_ra_D);		// gets rs, rt values and writes rd value if we = 1 
@@ -145,8 +143,8 @@ module elec4700(
 endmodule
 
 module FDRegister(
-	input logic clk, en, clr, input logic [4:0] PCF, input logic [17:0] instruction_F,
-	output logic [4:0] PCD, output logic [17:0] instruction_D, output logic JumpFlush_D);
+	input logic clk, en, clr, input logic [4:0] PCF, input logic [31:0] instruction_F,
+	output logic [4:0] PCD, output logic [31:0] instruction_D, output logic JumpFlush_D);
 	
 	initial begin
 		PCD = 5'b0;
@@ -172,14 +170,14 @@ module DERegister(
 	input logic clk, clr, WriteRAD, alu_enD, muldiv_enD, shift_enD, MemtoRegD, WriteEnableD, WriteCheckD, lui_en_D, AluSrc2_D, AluSrc1_D, AluSrc0_D, forwarding_disable_rs_D, stack_add_D, stack_subtract_D, 
 	input logic [1:0] stack, 
 	input logic [2:0] MulDivFunctD, ShiftFunctD, 
-	input logic [3:0] rtD, rsD, rdD, ALUFunctD, 
-	input logic [4:0] MemOpD,
+	input logic [3:0] ALUFunctD, 
+	input logic [4:0] rtD, rsD, rdD, MemOpD,
 	input logic [31:0] RD1D, RD2D, ra_D,
 	output logic WriteRAE, alu_enE, muldiv_enE, shift_enE, MemtoRegE, WriteEnableE, WriteCheckE, lui_en_E, AluSrc2_E, AluSrc1_E, AluSrc0_E, forwarding_disable_rs_E, 
 	output logic [1:0] stack_out, 
 	output logic [2:0] MulDivFunctE, ShiftFunctE, 
-	output logic [3:0] rtE, rsE, rdE, ALUFunctE, 
-	output logic [4:0] MemOpE,
+	output logic [3:0] ALUFunctE, 
+	output logic [4:0] rtE, rsE, rdE, MemOpE,
 	output logic [31:0] RD1E, RD2E, ra_E);
 
 	initial begin
@@ -263,12 +261,10 @@ endmodule // DERegister
 
 module EMRegister(
 	input logic clk, WriteEnable_E, MemToReg_E, WriteRA_E,
-	input logic [3:0] write_value_E,
-	input logic [4:0] MemOp_E,
+	input logic [4:0] write_value_E, MemOp_E,
 	input logic [31:0] write_out_E, ra_E, rt_value_E,
 	output logic WriteEnable_M, MemToReg_M, WriteRA_M,
-	output logic [3:0] write_value_M,
-	output logic [4:0] MemOp_M,
+	output logic [4:0] write_value_M, MemOp_M,
 	output logic [31:0] write_out_M, ra_M, rt_value_M);
 
 	initial begin
@@ -297,10 +293,10 @@ endmodule // EMRegister
 
 module MWRegister(
 	input logic clk, WriteEnable_M, MemToReg_M, WriteRA_M, 
-	input logic [3:0] write_value_M, 
+	input logic [4:0] write_value_M, 
 	input logic [31:0] write_out_M, rd_RAM_M, ra_M,
 	output logic WriteEnable_W, MemToReg_W, WriteRA_W,
-	output logic [3:0] write_value_W, 
+	output logic [4:0] write_value_W, 
 	output logic [31:0] write_out_W, rd_RAM_W, ra_W);
 
 	initial begin
@@ -324,7 +320,7 @@ module MWRegister(
 	end
 endmodule // MWRegister
 
-module ROM_test #(parameter clock_length=4,instruction_width=18) (
+module ROM_test #(parameter clock_length=4,instruction_width=32) (
 	input  logic [clock_length-1:0] Ad,
 	output logic [instruction_width-1:0] Dout);
 
@@ -340,7 +336,7 @@ endmodule
 module regfile(
 	input logic clk, WE, JUMP,
 	input logic [1:0] stack,
-	input logic [3:0] RA1, RA2, WA, RA,
+	input logic [4:0] RA1, RA2, WA, RA,
 	input logic [31:0] WD,
 	output logic [6:0] HEX0,HEX1,HEX2,HEX3,
 	output logic [31:0] RD1, RD2, RA_OUT);
@@ -401,4 +397,3 @@ module seven_segment(input logic [3:0] switch, output logic [6:0] hex_disp);	// 
 	assign hex_disp[6] = ~((switch[3] & switch[1]) | (switch[3] & switch[0]) | (~switch[2] & switch[1]) | (switch[3] & ~switch[2]) | (switch[1] & ~switch[0]) | (~switch[3] & switch[2] & ~switch[1]));	// sum of products for the middle segment
 
 endmodule
-	
