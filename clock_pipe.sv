@@ -34,14 +34,16 @@ module elec4700(
 	logic [3:0] ALUFunct_D;	// 4 bit numbers as used in opcodes
 	logic [4:0] rs_D, rt_D, rd_D, MemOp_D, JumpBranch_D, pc_D;
 	logic [5:0] opcode_D;
+	logic [14:0] constant_D;
 	logic [31:0] instruction_D, rs_value_D, rt_value_D, ra_D, rs_value_forward_D, rt_value_forward_D, latest_ra_D;
 	
 	//***Execute Define Variables***//
 	logic alu_en_E, muldiv_en_E, shift_en_E, WriteEnable_E, WriteCheck_E, WriteRA_E, MemToReg_E, AluSrc2_E, AluSrc1_E, AluSrc0_E, 
 			Flush_E, lui_en_E, forward_3rd_E;
 	logic [2:0] MulDivFunct_E, ShiftFunct_E; 		// results from control module
-	logic [3:0] ALUFunct_E, ;
+	logic [3:0] ALUFunct_E;
 	logic [4:0] rs_E, rt_E, rd_E, write_value_E, MemOp_E;
+	logic [14:0] constant_E;
 	logic [31:0] write_out_E, ALU_B_E, rs_value_E, rt_value_E, hi_E, lo_E, mul_div_out_E, shift_out_E, ALU_out_E, ra_E, ALU_A_E;
 	
 	//***Memory Define Variables***//
@@ -71,18 +73,20 @@ module elec4700(
 	assign rs_D = instruction_D[24:20];    //same as shamt
 	assign rt_D = instruction_D[19:15];
 	assign rd_D = instruction_D[14:10]; 		//same as imm and B1offset and MemImm
+	assign constant_D = instruction_D[14:0];
 	
 	regfile test_read(clk, WriteEnable_W, WriteRA_E, stack_D, rs_D, rt_D, write_value_W, ra_E, rd_value_W, 
 			HEX0,HEX1,HEX2,HEX3, rs_value_D, rt_value_D, latest_ra_D);		// gets rs, rt values and writes rd value if we = 1 
-	priority_decoder main(instruction_D[17:13], Ji, B1, B2, Ii, Mi, Ri);		// priority decoder for main instruction opcode
-	priority_decoder_Rtype Rtype(instruction_D[16:13], Excep, OutputA, MulDiv, Shift, ALU_op);		// priority decoder for R type
+	priority_decoder main(instruction_D[31:27], Ji, B1, B2, Ii, Mi, Ri);		// priority decoder for main instruction opcode
+	priority_decoder_Rtype Rtype(instruction_D[30:27], Excep, OutputA, MulDiv, Shift, ALU_op);		// priority decoder for R type
 	
 	control control_unit(opcode_D, Ji, B1, B2, Ii, Mi, Ri, extra_jump, Excep, OutputA, MulDiv, Shift, ALU_op, Jump_Flush_D, init_flush_F, 
 			alu_en_D, muldiv_en_D, shift_en_D, jump_en_D, WriteEnable_D, WriteCheck_D, WriteRA_D, AluSrc2_D, AluSrc1_D, AluSrc0_D, 
 			MemToReg_D, lui_en_D, forwarding_disable_rs_D, stack_add_D, stack_subtract_D, ALUFunct_D, MulDivFunct_D, ShiftFunct_D, MemOp_D, JumpBranch_D); 
 	
 	// Jump
-	jump #(5,5) jump_instruction (rs_value_forward_D, rt_value_forward_D, latest_ra_D, rd_D, pc_D, JumpBranch_D, jump_en_D, pc_out, ra_D, jump_check_D);	// jump function
+	logic whyyyyy;
+	jump #(5,5) jump_instruction (rs_value_forward_D, rt_value_forward_D, latest_ra_D, constant_D, pc_D, JumpBranch_D, jump_en_D, pc_out, ra_D, jump_check_D, whyyyyy);	// jump function
 	
 	// Hazard Forwarding
 	forwarding forward (WriteEnable_E, WriteEnable_M, WriteEnable_W, forwarding_disable_rs_D, MemToReg_M, jump_en_D, rs_D, rt_D, write_value_E, write_value_M, write_value_W, 
@@ -92,16 +96,16 @@ module elec4700(
 	
 	// Decode to Execute on Clock edge
 	DERegister DEReg(clk, Flush_E, WriteRA_D, alu_en_D, muldiv_en_D, shift_en_D, MemToReg_D, WriteEnable_D, WriteCheck_D, lui_en_E, AluSrc2_D, AluSrc1_D, AluSrc0_D, forwarding_disable_rs_D,
-			stack_add_D, stack_subtract_D, stack_D, MulDivFunct_D, ShiftFunct_D, rt_D, rs_D, rd_D, ALUFunct_D, MemOp_D, rs_value_forward_D, rt_value_forward_D, ra_D, 
+			stack_add_D, stack_subtract_D, stack_D, MulDivFunct_D, ShiftFunct_D, rt_D, rs_D, rd_D, ALUFunct_D, MemOp_D, constant_D, rs_value_forward_D, rt_value_forward_D, ra_D, 
 			WriteRA_E, alu_en_E, muldiv_en_E, shift_en_E, MemToReg_E, WriteEnable_E, WriteCheck_E, lui_en_E, AluSrc2_E, AluSrc1_E, AluSrc0_E, forwarding_disable_rs_E,
-			stack_D, MulDivFunct_E, ShiftFunct_E, rt_E, rs_E, rd_E, ALUFunct_E, MemOp_E, rs_value_E, rt_value_E, ra_E);
+			stack_D, MulDivFunct_E, ShiftFunct_E, rt_E, rs_E, rd_E, ALUFunct_E, MemOp_E, constant_E, rs_value_E, rt_value_E, ra_E);
   
 	//***Execute***//
 	assign write_value_E = WriteCheck_E? {rd_E}:{rt_E};
 	assign ALU_A_E = lui_en_E? {32'd0}:rs_value_E;
 	
 	//Immediate
-	immediate_control immediate(AluSrc2_E, AluSrc1_E, AluSrc0_E, rd_E, rt_value_E, rs_value_E, ALU_B_E);
+	immediate_control immediate(AluSrc2_E, AluSrc1_E, AluSrc0_E, constant_E, rt_value_E, rs_value_E, ALU_B_E);
 	
 	tristate_active_hi shift2 (shift_out_E, shift_en_E, write_out_E);
 	tristate_active_hi muldiv2 (mul_div_out_E, muldiv_en_E, write_out_E);
@@ -136,6 +140,12 @@ module elec4700(
 	assign LEDG[7] = Stall_F;
 	assign LEDG[6] = jump_check_D;
 	assign LEDG[5] = blank_F;
+	//Ji, B1, B2, Ii, Mi, Ri
+	assign LEDG[4] = Ji;
+	assign LEDG[3] = B1;
+	assign LEDG[2] = JumpBranch_D[0];
+	//assign LEDG[1] = Ri;
+	assign LEDG[1] = whyyyyy;
 	//assign LEDR[9:0] = instruction_F[17:8];
 	//assign LEDG[7:1] = instruction_D[7:1];	
 
@@ -172,12 +182,14 @@ module DERegister(
 	input logic [2:0] MulDivFunctD, ShiftFunctD, 
 	input logic [3:0] ALUFunctD, 
 	input logic [4:0] rtD, rsD, rdD, MemOpD,
+	input logic [14:0] constant_D,
 	input logic [31:0] RD1D, RD2D, ra_D,
 	output logic WriteRAE, alu_enE, muldiv_enE, shift_enE, MemtoRegE, WriteEnableE, WriteCheckE, lui_en_E, AluSrc2_E, AluSrc1_E, AluSrc0_E, forwarding_disable_rs_E, 
 	output logic [1:0] stack_out, 
 	output logic [2:0] MulDivFunctE, ShiftFunctE, 
 	output logic [3:0] ALUFunctE, 
 	output logic [4:0] rtE, rsE, rdE, MemOpE,
+	output logic [14:0] constant_E,
 	output logic [31:0] RD1E, RD2E, ra_E);
 
 	initial begin
@@ -199,6 +211,7 @@ module DERegister(
 		RD1E = 32'd0;
 		RD2E = 32'd0;
 		ra_E = 32'd0;
+		constant_E = 15'b0;
 		AluSrc2_E = 1'b0;
 		AluSrc1_E = 1'b0;
 		AluSrc0_E = 1'b0;
@@ -227,6 +240,7 @@ module DERegister(
 			RD1E <= 32'd0;
 			RD2E <= 32'd0;
 			ra_E <= 32'd0;
+			constant_E <= 15'b0;
 			AluSrc2_E <= 1'b0;
 			AluSrc1_E <= 1'b0;
 			AluSrc0_E <= 1'b0;
@@ -251,6 +265,7 @@ module DERegister(
 			RD1E <= RD1D;
 			RD2E <= RD2D;
 			ra_E <= ra_D;
+			constant_E <= constant_D;
 			AluSrc2_E <= AluSrc2_D;
 			AluSrc1_E <= AluSrc1_D;
 			AluSrc0_E <= AluSrc0_D;
@@ -366,7 +381,6 @@ endmodule
 module counter32 #(parameter clock_length=6) (
 	input logic clk, en, JUMP, blank, input logic [clock_length-1:0] input_q, jump_dest,
 	output logic [clock_length-1:0] q);
-	//FIX THIS, REMOVE CLOCK BLOCK, USE MUX TO PICK FROM IF/ELSE
 	initial begin
 		q = 5'b0;
 	end

@@ -45,23 +45,23 @@ endmodule
 module immediate_control
 (
 	//	Imm = rd
-	input logic AluSrc2, AluSrc1, AluSrc0, input logic [3:0] Imm, input logic [31:0] rt_value, rs_value,
+	input logic AluSrc2, AluSrc1, AluSrc0, input logic [14:0] Imm, input logic [31:0] rt_value, rs_value,
 	output logic [31:0] ALU_B
 );
 	// Immediate operands - decide what B will be for ALU
 	logic [31:0] Alu0, Alu1, SignImm, ZeroImm, CompImm;
 	
-	assign SignImm = {{28{Imm[3]}}, Imm};
-	assign ZeroImm = {28'b0, Imm};
-	comp_imm_select select_comp_imm (rs_value[2:0], Imm, CompImm);
-	//assign CompImm = {~Imm, {28{1'b1}} };
+	assign SignImm = {{17{Imm[3]}}, Imm};
+	assign ZeroImm = {17'b0, Imm};
+	//comp_imm_select select_comp_imm (rs_value[2:0], Imm, CompImm);
+	assign CompImm = {~Imm, {15{1'b1}} };
 	assign Alu0 = AluSrc0? CompImm : ZeroImm;
 	assign Alu1 = AluSrc1? Alu0 : SignImm;
 	assign ALU_B = AluSrc2? Alu1 : rt_value;	
 	
 endmodule
 
-module comp_imm_select
+/*module comp_imm_select
 (
 	input logic [2:0] rs_value, input logic [3:0] Imm, 
 	output logic [31:0] CompImm
@@ -78,4 +78,4 @@ module comp_imm_select
 	assign CompImm = rs_value[2] ? temp_most_1:temp_most_2;
 	
 endmodule
-
+*/

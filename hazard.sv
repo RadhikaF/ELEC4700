@@ -4,7 +4,7 @@
 
 module forwarding (
 	input logic RegWriteE, RegWriteM, RegWriteW, forwarding_disable_rs_D, MemToReg_M, jump_enable_D,
-	input logic [3:0] rsD, rtD, WriteRegE, WriteRegM, WriteRegW, 
+	input logic [4:0] rsD, rtD, WriteRegE, WriteRegM, WriteRegW, 
 	output logic [1:0] ForwardAD, ForwardBD, branchstall
 	);
 	
@@ -60,7 +60,7 @@ endmodule
 endmodule*/
 	
 module memory_load (
-	input logic rs_D, rt_D, rt_E, MemToReg_E, branchstall,
+	input logic [4:0] rs_D, rt_D, rt_E, input logic MemToReg_E, branchstall,
 	output logic StallF, StallD, FlushE
 	);
 	
