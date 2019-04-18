@@ -16,7 +16,7 @@ module elec4700(
 	logic clk;
 	//assign clk = q[25];     // Uncomment these lines and choose the appropriate bit of q if a slower clock is needed
 	//assign clk = CLOCK_125_p;
-	assign clk = SW[9];
+	assign clk = KEY[0];
    assign LEDG[0] = clk;   // Can see the clock if it is slow enough
 	//assign clk = q[25];
 	
@@ -36,6 +36,19 @@ module elec4700(
 	logic [5:0] opcode_D;
 	logic [14:0] constant_D;
 	logic [31:0] instruction_D, rs_value_D, rt_value_D, ra_D, rs_value_forward_D, rt_value_forward_D, latest_ra_D;
+	initial begin
+		Ji <= 1'b0;
+		B1 <= 1'b0;
+		B2 <= 1'b0;
+		Ii <= 1'b0;
+		Mi <= 1'b0;
+		Ri <= 1'b0;
+		Excep <= 1'b0;
+		OutputA <= 1'b0;
+		MulDiv <= 1'b0;
+		Shift <= 1'b0;
+		ALU_op <= 1'b0;	
+	end
 	
 	//***Execute Define Variables***//
 	logic alu_en_E, muldiv_en_E, shift_en_E, WriteEnable_E, WriteCheck_E, WriteRA_E, MemToReg_E, AluSrc2_E, AluSrc1_E, AluSrc0_E, 
@@ -145,7 +158,7 @@ module elec4700(
 	assign LEDG[3] = B1;
 	assign LEDG[2] = JumpBranch_D[0];
 	//assign LEDG[1] = Ri;
-	assign LEDG[1] = whyyyyy;
+	assign LEDG[1] = (whyyyyy & B1);
 	//assign LEDR[9:0] = instruction_F[17:8];
 	//assign LEDG[7:1] = instruction_D[7:1];	
 
@@ -356,7 +369,7 @@ module regfile(
 	output logic [6:0] HEX0,HEX1,HEX2,HEX3,
 	output logic [31:0] RD1, RD2, RA_OUT);
 	
-	logic [16:0] rf[31:0];
+	logic [32:0] rf[31:0];
 	always_ff @(posedge clk) begin
 		if (WE) rf[WA] <= WD;
 		if (JUMP) rf[16 + stack] <= RA;
@@ -364,10 +377,30 @@ module regfile(
 	 
 	assign RD1 = rf[RA1];
    assign RD2 = rf[RA2];
-	assign RA_OUT = rf[16 + stack];
+	assign RA_OUT = rf[32 + stack];
+	
+	initial begin
+		rf[0] <= 32'b0;
+		rf[1] <= 32'b0;
+		rf[2] <= 32'b0;
+		rf[3] <= 32'b0;
+		rf[4] <= 32'b0;
+		rf[5] <= 32'b0;
+		rf[6] <= 32'b0;
+		rf[7] <= 32'b0;
+		rf[8] <= 32'b0;
+		rf[9] <= 32'b0;
+		rf[10] <= 32'b0;
+		rf[11] <= 32'b0;
+		rf[12] <= 32'b0;
+		rf[13] <= 32'b0;
+		rf[14] <= 32'b0;
+		rf[15] <= 32'b0;
+		rf[16] <= 32'b0;
+	end
 	
 	seven_segment reg1 (rf[0], HEX0[6:0]);
-	seven_segment reg2 (rf[1], HEX1[6:0]);
+	seven_segment reg2 (rf[15], HEX1[6:0]);
 	seven_segment reg3 (rf[2], HEX2[6:0]);
 	seven_segment reg4 (rf[3], HEX3[6:0]);
 	//seven_segment reg5 (rf[4], HEX4[6:0]);

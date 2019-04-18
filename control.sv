@@ -51,7 +51,7 @@ module immediate_control
 	// Immediate operands - decide what B will be for ALU
 	logic [31:0] Alu0, Alu1, SignImm, ZeroImm, CompImm;
 	
-	assign SignImm = {{17{Imm[3]}}, Imm};
+	assign SignImm = {{17{Imm[14]}}, Imm};
 	assign ZeroImm = {17'b0, Imm};
 	//comp_imm_select select_comp_imm (rs_value[2:0], Imm, CompImm);
 	assign CompImm = {~Imm, {15{1'b1}} };
