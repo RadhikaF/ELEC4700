@@ -1,13 +1,33 @@
 // ELEC3720 Programmable Logic Design 
 // Joshua Beverley & Radhika Feron
+
 // Memory RAM
-module RAM #(parameter N=5, W=8) (
+/*module RAM #(parameter N=5, W=32) (
 	input logic [N-1:0] Ad,
 	input logic [W-1:0] Din,
 	input logic Clk, En,
 	output logic [W-1:0] Dout);
 	
+	logic [16:0] cpuAddress;
+	assign cpuAddress = {(17-N)*{1'b0}, Ad};
+	
+	SRAM test_sram(clk, stall, En, ~En, cpuAddress, Din, Dout);
+	
 	logic [W-1:0] array[2**N-1:0];
+	assign Dout = array[Ad];
+	
+	always_ff @ (posedge Clk)
+		if(En) array[Ad] <= Din;
+	
+endmodule*/
+
+module cache_RAM #(parameter N=6, W=32) (
+	input logic [N-1:0] Ad,
+	input logic [W-1:0] Din,
+	input logic Clk, En,
+	output logic [W-1:0] Dout);
+	
+	logic [2**N-1:0] array[W-1:0];
 	assign Dout = array[Ad];
 	
 	always_ff @ (posedge Clk)

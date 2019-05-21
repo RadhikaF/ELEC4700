@@ -88,3 +88,17 @@ endmodule
 	assign branchstall = jump_enable_D & (bstall1 | bstall2);
 
 endmodule*/
+
+module delay_SRAM (
+	input cache_SRAM_delay, stall_F, stall_D,  
+	output logic stall_F_out, stall_D_out, stall_E, stall_M
+	)
+	stall_F_out = cache_SRAM_delay | stall_F;
+	stall_D_out = cache_SRAM_delay | stall_D;
+	stall_E = cache_SRAM_delay;
+	stall_M = cache_SRAM_delay;
+	
+endmodule
+	
+
+
