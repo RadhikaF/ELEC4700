@@ -22,7 +22,7 @@ module cache_8way_controller (
 
 
 	input	logic clk,		//Clock input same as CPU and Memory controller(if MemController work on same freq.)
-	input	logic reset_n,	//Active Low Asynchronous Reset Signal Input
+	input	logic reset,	//Active Low Asynchronous Reset Signal Input
 	
 	inout	[31:0]	data_cpu,	//Bi-directional Data bus from CPU
 	inout	[31:0]	data_sram,	//Bi-directional Data bus to Main Memory
@@ -42,48 +42,49 @@ module cache_8way_controller (
 
 );
 	logic [16:0] addrlatch;
-	logic [31:0] wr_mem;
 	logic [31:0] wrdata;
 	logic rdwr; //1 if read, 0 if write
+	logic hit_w0, hit_w1, hit;
+
+	logic [10:0] tag_WD0, tag_WD1, tag_no, tag_RD0, tag_RD1; 
+	logic valid_WD0. valid_WD1, lru_WD0, lru_WD1, wrtag_en0, wrtag_en1, wrvalid_en0, wrvalid_en1, wrdata_en0, wrdata_en1, wrlru_en0, wrlru_en1, valid_RD0, valid_RD1, lru_RD0, lru_RD1;
+	logic [31:0] data_WD0, data_WD1, read_data, data_RD0, data_RD1;
+	logic [5:0] set_no;
 	assign set_size = 6 //64 sets - need 6 bits
 	assign tag_size = 11 //17-6 = 11 bits
 	assign data_size = 32 //32 bit
 	assign valid_size = 1
 	assign LRU_size = 1
 	
-	assign set_no = (state == IDLE) ? addr_sram[5:0]:addrlatch[5:0];
-	assign tag_no = (state == IDLE) ? addr_sram[16:6]:addrlatch[16:6];
+	assign set_no = (current_state == IDLE) ? addr_sram[5:0]:addrlatch[5:0];
+	assign tag_no = (current_state == IDLE) ? addr_sram[16:6]:addrlatch[16:6];
 	
 	//data to SRAM and cpu
-	assign data_cpu = (/**/)? read_data: 8'bz;
-	assign data_sram = wr_sram ? wr_mem : 32'bz;
+	assign data_cpu = read_data;
+	assign data_sram = wrdata;
 	
-	//*********************************************************INITIALISE ALL REGISTERS TO ZERO INITIALLY
+	//*********************************************************INITIALISE VALID REGISTERS TO ZERO INITIALLY
 	//Tag registers
-	RAM #(set_size, tag_size) tag_way0(set_no, tag_WD0, clk, wrtag_en0, tag_RD0)
-	RAM #(set_size, tag_size) tag_way1(set_no, tag_WD1, clk, wrtag_en1, tag_RD1)
-	
+	RAM #(set_size, tag_size) tag_way0(set_no, tag_WD0, clk, wrtag_en0, tag_RD0);
+	RAM #(set_size, tag_size) tag_way1(set_no, tag_WD1, clk, wrtag_en1, tag_RD1);
+
 	//Valid registers
-	RAM #(set_size, valid_size) valid_way0(set_no, valid_WD0, clk, wrvalid_en0, valid_RD0)
-	RAM #(set_size, valid_size) valid_way1(set_no, valid_WD1, clk, wrvalid_en1, valid_RD1)
+	RAM #(set_size, valid_size) valid_way0(set_no, valid_WD0, clk, wrvalid_en0, valid_RD0);
+	RAM #(set_size, valid_size) valid_way1(set_no, valid_WD1, clk, wrvalid_en1, valid_RD1);
 
 	//Data registers
-	RAM #(set_size, data_size) data_way0(set_no, data_WD0, clk, wrdata_en0, data_RD0)
-	RAM #(set_size, data_size) data_way1(set_no, data_WD1, clk, wrdata_en1, data_RD1)
+	RAM #(set_size, data_size) data_way0(set_no, data_WD0, clk, wrdata_en0, data_RD0);
+	RAM #(set_size, data_size) data_way1(set_no, data_WD1, clk, wrdata_en1, data_RD1);
 
 	//LRU registers
-	RAM #(set_size, LRU_size) LRU_way0(set_no, lru_WD0, clk, wrlru_en0, lru_RD0)
-	RAM #(set_size, LRU_size) LRU_way1(set_no, lru_WD1, clk, wrlru_en1, lru_RD1)
+	RAM #(set_size, LRU_size) LRU_way0(set_no, lru_WD0, clk, wrlru_en0, lru_RD0);
+	RAM #(set_size, LRU_size) LRU_way1(set_no, lru_WD1, clk, wrlru_en1, lru_RD1);
 	
 	assign hit_w0 = valid_RD0 & (tag_no == tag_RD0);
 	assign hit_w1 = valid_RD1 & (tag_no == tag_RD1);
 	assign hit = hit_w0 | hit_w1;
 	
-	assign unused_way
-	
-	assign reset_lru = lru_RD0 & lru_RD1; //checks if the lru bit for each way is 1, if it is all lru bits need to be reset, apart from the currently used way
-	
-	typedef enum logic [2:0] {IDLE, READ, READMM, WAITFORMM, UPDATECACHE, WRITE, WRITECACHE, WRITEMM} state;
+	typedef enum logic [2:0] {IDLE, READ, WAITFORMM, UPDATECACHE, WRITE, WRITECACHE, WRITEMM} state;
 	state current_state;
 	
 	always_ff @(posedge clk)
@@ -92,14 +93,29 @@ module cache_8way_controller (
 			begin
 				current_state <= IDLE;
 				addrlatch <= 17'd0;
-				//*******************************************
-				//set all enable and important bits to 0!!!
-				//*******************************************
+				wrtag_en0 <= 1'b0;
+				wrtag_en1 <= 1'b0;
+				wrvalid_en0 <= 1'b0;
+				wrvalid_en1 <= 1'b0;
+				wrdata_en0 <= 1'b0;
+				wrdata_en1 <= 1'b0;
+				wrlru_en0 <= 1'b0;
+				wrlru_en1 <= 1'b0;
 				stall_cpu <= 1'b0;
-				rdwr <= 1'b1; //initially in write state
+				rdwr <= 1'b1; //initially in read state
+				tag_WD0 <= 11'b0; 
+				tag_WD1	<= 11'b0
+				valid_WD0 <= 1'b0;
+				valid_WD1 <= 1'b0;
+				data_WD0 <= 32'b0;
+				data_WD1 <= 32'b0
+				lru_WD0 <= 1'b0;
+				lru_WD1 <= 1'b0;
+				wrdata <= 32'b0;
+				wr_sram <= 1'b0; 
 			end
 			else begin
-				case (state)
+				case (current_state)
 					IDLE: begin
 						addrlatch <= addr_cpu;	//latch the address so it doesn't change even if addr_cpu changes
 						wrtag_en0 <= 1'b0;				//disable write enables to the cache registers
@@ -111,21 +127,21 @@ module cache_8way_controller (
 						wrlru_en0 <= 1'b0;
 						wrlru_en1 <= 1'b0;
 						stall_cpu <= 1'b0;
-						rd_mem <= 1'b0;			//kept high until data is read from main memory
-						wr_mem <= 1'b0;
+						rd_sram <= 1'b0;			//kept high until data is read from main memory
+						wr_sram <= 1'b0;
 						//********************************************
 						if (rd_cpu) begin
-							state <= READ;
-							rdwr <= 1'b1;
+							current_state <= READ;
+							rdwr <= 1'b1;		//set this bit to indicate request to read
 						end
 						else if (wr_cpu) begin
-							state <= WRITE;
-							wrdata <= data_cpu;
-							wraddr <= addr_cpu;
-							rdwr <= 1'b0;
+							current_state <= WRITE;
+							wrdata <= data_cpu;		//latch data to be written
+							rdwr <= 1'b0;			//clear this bit to indicate request to write
 						end
 						else
-							state <= state;
+						rdwr <= 1'b1;
+							current_state <= current_state;
 						end
 					READ: begin
 					//check for read hit or miss in cache.
@@ -136,17 +152,17 @@ module cache_8way_controller (
 						wrvalid_en1 <= 1'b0;
 						wrdata_en0 <= 1'b0;
 						wrdata_en1 <= 1'b0;
-						wrlru_en0 <= 1'b0;
-						wrlru_en1 <= 1'b0;
+						wr_sram <= 1'b0;
 						if (hit) begin
-							state <= IDLE;
+							current_state <= IDLE;
+							rd_sram <= 1'b0;
 							//***************************MORE
 							if(hit_w0) begin		//if the hit was from way 0
-								read_data <= data_RD0;		//latch the data from way 0 (to be sent to cpu
+								read_data <= data_RD0;		//latch the data from way 0 (to be sent to cpu)
 								lru_WD0 <= 1'b1;
 								wrlru_en0 <= 1'b1;			//enable the write for lru registers
 								//check if all the lru bits for the ways are 1 or will become 1 after this lru bit is set
-								if (lru_RD1) begin		//AND with the other ways one more are added
+								if (lru_RD1) begin		//AND with the other ways once more are added
 									lru_WD1 <= 1'b0;
 									wrlru_en1 <= 1'b1;
 								end
@@ -154,50 +170,45 @@ module cache_8way_controller (
 							else if (hit_w1) begin
 								read_data <= data_RD1;
 								lru_WD1 <= 1'b1;
-								wrlru_en0 <= 1'b1;
+								wrlru_en1 <= 1'b1;
 								if (lru_RD0) begin
-								lru_WD0 <= 1'b0;
-								wrlru_en0 <= 1'b1;
+									lru_WD0 <= 1'b0;
+									wrlru_en0 <= 1'b1;
 								end
 							end
 						end
 						else begin
+						//if a miss occurs, fetch data from memory
+							wrlru_en0 <= 1'b0;
+							wrlru_en1 <= 1'b0;						
 							stall_cpu <= 1'b1;
-							strtag0 <= tag_RD0;
-							strtag1 <= tag_RD1;
-							strdata0 <= data_RD0;
-							strdata1 <= data_RD1;
-							state <= READMM;
-							//if a miss occurs, fetch data from memory
-						end
-					end
-					READMM: begin
-						addr_sram <= addrlatch;
-						if (ready_sram) begin
-							rd_sram <= 1'b1;
-							state <= WAITFORMM;
-						end
-						else begin
-							rd_mem <= 1'b0;
-							state <= state;
+							addr_sram <= addrlatch;
+							if (ready_sram) begin			//check if sram is ready to receive a new request
+								rd_sram <= 1'b1;
+								current_state <= WAITFORMM;
+							end
+							else begin
+								rd_sram <= 1'b0;
+								current_state <= current_state;
+							end
 						end
 					end
 					WAITFORMM: begin
 						if(ready_sram) begin
 							if (rdwr)
-								state <= UPDATECACHE;
+								current_state <= UPDATECACHE;
 							else
-								state <= IDLE;
+								current_state <= IDLE;
 							rd_sram <= 1'b0;	//disable read signal to sram
 							wr_sram <= 1'b0; //disable write signal to sram
 						end
 						else begin
-							state <= state;
+							current_state <= current_state;
 							//WHAT IF YOU ARE WRITING????
 						end
 					end
 					UPDATECACHE: begin	//memory is read so fetch the data and send it to cpu and update cache (data and tag and LRU)
-						state <= IDLE;
+						current_state <= IDLE;
 						read_data <= data_sram;		//update cache according to LRU policy
 						if (lru_RD0) begin		//according to lru bit, update tag, data and valid, lru
 							tag_WD0 <= tag_no;
@@ -261,48 +272,41 @@ module cache_8way_controller (
 							end
 						end
 						if (ready_sram)
-							state <= WRITEMM;
+							current_state <= WRITEMM;
 					end
 					WRITEMM: begin
 						addr_sram <= addrlatch;
 						if (ready_sram) begin
 							wr_sram <= 1'b1;
-							state <= WAITFORMM;
+							current_state <= WAITFORMM;
 						end
 						else begin
 							wr_sram <= 1'b0;
-							state <= state;
+							current_state <= current_state;
 						end
 					end	
 					default: begin
-						addrlatch <= 'b0;
-						addr_sram <= 'b0;
-						rd_sram <= 'b0;
-						//etc
-					
+						rd_sram <= 1'b0;
+						wr_sram <= 1'b0;
+						addrlatch <= 17'd0;
+						wrtag_en0 <= 1'b0;
+						wrtag_en1 <= 1'b0;
+						wrvalid_en0 <= 1'b0;
+						wrvalid_en1 <= 1'b0;
+						wrdata_en0 <= 1'b0;
+						wrdata_en1 <= 1'b0;
+						wrlru_en0 <= 1'b0;
+						wrlru_en1 <= 1'b0;
+						stall_cpu <= 1'b0;
+						rdwr <= 1'b1; //initially in read state
+						tag_WD0 <= 11'b0; 
+						tag_WD1	<= 11'b0
+						valid_WD0 <= 1'b0;
+						valid_WD1 <= 1'b0;
+						data_WD0 <= 32'b0;
+						data_WD1 <= 32'b0
+						lru_WD0 <= 1'b0;
+						lru_WD1 <= 1'b0;
+						wrdata <= 32'b0;
 					end
-	
-	
-	//if lw -> read
-	//if sw -> write
-	
-	//if have to read
-	
-	
-	//input logic cache_WE,
-	//input logic [10:0] tag_no,
-	//input logic [5:0] set_no,
-	//input logic [31:0] cache_write_data
-	//output logic [31:0] cache_read_data);
-	
-	set_size = 6 //64 sets - need 6 bits
-	tag_size = 11 //17-6 = 11 bits
-	data_size = 32 //32 bit
-	valid_size = 1
-	LRU_size = 1
-
-
-	logic accessed_bit, valid_size, dirty_size;
-
-
 endmodule
