@@ -138,9 +138,14 @@ module elec4700(
 			WriteEnable_M, MemToReg_M, WriteRA_M, write_value_M, MemOp_M, write_out_M, ra_M, rt_value_M);
 	
 	//***Memory***//
+	logic stall_sram, rd_sram, wr_sram;
+	logic hit, read_cpu, write_cpu, not_ready_stall, valid_RD0, valid_RD1;
 	// = base + offset = [rs] + signimm
-	Memory mem(MemToReg_M, MemOp_M, write_out_M[1:0], rt_value_M, MOut_M, rd_RAM_M, MemIn_M, MemEn_M);
-	SRAM test_sram(clk, Stall_M/* output stall from SRAM */, MemEn_M, ~MemEn_M, write_out_M[18:2], MemIn_M, MOut_M, SRAM_A, SRAM_D, SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n);
+	//Memory mem(MemToReg_M, MemOp_M, write_out_M[1:0], rt_value_M, MOut_M, rd_RAM_M, MemIn_M, MemEn_M);
+	cache_8way_controller cache_2way(MemOp_M, clk, rt_value_M, write_out_M[18:2], MOut_M, Stall_M, rd_sram, wr_sram, /*stall_sram,*/ rd_RAM_M, MemIn_M, hit, read_cpu, write_cpu, not_ready_stall, valid_RD0, valid_RD1);
+	
+	//SRAM test_sram(clk, Stall_M/* output stall from SRAM */, MemEn_M, ~MemEn_M, write_out_M[18:2], MemIn_M, MOut_M, SRAM_A, SRAM_D, SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n);
+	SRAM test_sram(clk, Stall_M/* output stall from SRAM */, wr_sram, rd_sram, write_out_M[18:2], MemIn_M, MOut_M, SRAM_A, SRAM_D, SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n);
 	//RAM #(5,32) RamMem(write_out_M[7:2], MemIn_M, clk, MemEn_M, MOut_M);
 	//cache_RAM #(9, 32) test_cache ()
   
@@ -148,27 +153,29 @@ module elec4700(
 	delay_SRAM (Stall_M/* input stall from cache controller */, Stall_F, Stall_D, Stall_F_SRAM, Stall_D_SRAM, Stall_E_SRAM, Stall_M_SRAM);
   
 	// Memory to Write on Clock edge
-	MWRegister MWReg (clk, WriteEnable_M, MemToReg_M, WriteRA_M, write_value_M, write_out_M, rd_RAM_M, ra_M, 
+	MWRegister MWReg (clk, Stall_M_SRAM, WriteEnable_M, MemToReg_M, WriteRA_M, write_value_M, write_out_M, rd_RAM_M, ra_M, 
 			WriteEnable_W, MemToReg_W, WriteRA_W, write_value_W, write_out_W, rd_RAM_W, ra_W);
   
 	//***Write***//
 	assign rd_value_W = MemToReg_W ? rd_RAM_W:write_out_W;
 	
 	//***Other***//
-	assign LEDR[4:0] = pc_D;
-	assign LEDR[9:5] = pc_F;
-	assign LEDG[7] = Stall_F;
-	assign LEDG[6] = jump_check_D;
-	assign LEDG[5] = blank_F;
-	//Ji, B1, B2, Ii, Mi, Ri
-	assign LEDG[4] = Ji;
-	assign LEDG[3] = B1;
-	assign LEDG[2] = JumpBranch_D[0];
-	//assign LEDG[1] = Ri;
-	assign LEDG[1] = (whyyyyy & B1);
-	//assign LEDR[9:0] = instruction_F[17:8];
-	//assign LEDG[7:1] = instruction_D[7:1];	
-
+//	assign LEDR[0] = hit;
+//	assign LEDR[1] = read_cpu;
+//	assign LEDR[2] = write_cpu;
+//	assign LEDR[3] = Stall_M;
+//	assign LEDR[4] = Stall_M_SRAM;
+//	assign LEDR[5] = not_ready_stall;
+//	assign LEDR[6] = stall_sram;
+//	assign LEDR[7] = MemToReg_W;
+//	assign LEDG[7:1] = rd_value_W[6:0];
+assign LEDR[0] = read_cpu;
+assign LEDR[1] = write_cpu;
+assign LEDR[2] = Stall_M; 
+assign LEDR[9] = MemToReg_W;
+assign LEDR[8] = MemToReg_M;
+assign LEDR[7] = MemToReg_E;
+assign LEDR[6] = MemToReg_D;
   
 endmodule
 
@@ -329,7 +336,7 @@ module EMRegister(
 endmodule // EMRegister
 
 module MWRegister(
-	input logic clk, WriteEnable_M, MemToReg_M, WriteRA_M, 
+	input logic clk, en, WriteEnable_M, MemToReg_M, WriteRA_M, 
 	input logic [4:0] write_value_M, 
 	input logic [31:0] write_out_M, rd_RAM_M, ra_M,
 	output logic WriteEnable_W, MemToReg_W, WriteRA_W,
@@ -347,13 +354,15 @@ module MWRegister(
 	end
 	
 	always_ff @(posedge clk) begin
-		WriteEnable_W <= WriteEnable_M;
-		MemToReg_W <= MemToReg_M;
-		WriteRA_W <=  WriteRA_M;
-		write_value_W <= write_value_M;
-		write_out_W <= write_out_M;
-		rd_RAM_W <= rd_RAM_M;
-		ra_W <= ra_M;
+		if (~en) begin
+			WriteEnable_W <= WriteEnable_M;
+			MemToReg_W <= MemToReg_M;
+			WriteRA_W <=  WriteRA_M;
+			write_value_W <= write_value_M;
+			write_out_W <= write_out_M;
+			rd_RAM_W <= rd_RAM_M;
+			ra_W <= ra_M;
+		end
 	end
 endmodule // MWRegister
 
@@ -421,14 +430,14 @@ module regfile(
 		rf[29] <= 32'b0;
 		rf[30] <= 32'b0;
 		rf[31] <= 32'b0;
-		rf[32] <= 32'b0;
-		rf[33] <= 32'b0;
-		rf[34] <= 32'b0;
-		rf[35] <= 32'b0;
+		//rf[32] <= 32'b0;
+		//rf[33] <= 32'b0;
+		//rf[34] <= 32'b0;
+		//rf[35] <= 32'b0;
 	end
 	
 	seven_segment reg1 (rf[0], HEX0[6:0]);
-	seven_segment reg2 (rf[15], HEX1[6:0]);
+	seven_segment reg2 (rf[1], HEX1[6:0]);
 	seven_segment reg3 (rf[2], HEX2[6:0]);
 	seven_segment reg4 (rf[3], HEX3[6:0]);
 	//seven_segment reg5 (rf[4], HEX4[6:0]);

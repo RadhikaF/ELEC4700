@@ -20,6 +20,10 @@
 		if(En) array[Ad] <= Din;
 	
 endmodule*/
+/* tag -> word width = [10:0], #words = 64
+data -> word width = [31:0], #words = 64
+valid -> word width = 1, #words = 64
+lru -> word width = 1, #words = 64 */
 
 module cache_RAM #(parameter N=6, W=32) (
 	input logic [N-1:0] Ad,
@@ -27,12 +31,37 @@ module cache_RAM #(parameter N=6, W=32) (
 	input logic Clk, En,
 	output logic [W-1:0] Dout);
 	
-	logic [2**N-1:0] array[W-1:0];
+	logic [W-1:0] array[2**N-1:0];
 	assign Dout = array[Ad];
 	
 	always_ff @ (posedge Clk)
 		if(En) array[Ad] <= Din;
 	
+	initial begin
+		for (int k = 0; k < 2**N - 1; k = k + 1) begin
+			array[k] = 0;
+		end
+	end
+endmodule
+
+module cache_1bit_RAM #(parameter N=6) (
+	input logic [N-1:0] Ad,
+	input logic Din,
+	input logic Clk, En,
+	output logic Dout);
+	
+	logic array[2**N-1:0];
+	assign Dout = array[Ad];
+	
+	always_ff @ (posedge Clk)
+		if(En) array[Ad] <= Din;
+	
+	initial begin
+		for (int k = 0; k < 2**N - 1; k = k + 1) begin
+			array[k] = 0;
+		end
+	end
+
 endmodule
 
 //Memory
