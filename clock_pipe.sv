@@ -139,13 +139,13 @@ module elec4700(
 	
 	//***Memory***//
 	logic stall_sram, rd_sram, wr_sram;
-	logic hit, read_cpu, write_cpu, not_ready_stall, valid_RD0, valid_RD1;
+	logic hit, read_cpu, write_cpu, lru_RD0, lru_RD1, hit_w0, hit_w1, valid_RD0, valid_RD1, wrtag_en0, wrtag_en1;
 	// = base + offset = [rs] + signimm
 	//Memory mem(MemToReg_M, MemOp_M, write_out_M[1:0], rt_value_M, MOut_M, rd_RAM_M, MemIn_M, MemEn_M);
-	cache_8way_controller cache_2way(MemOp_M, clk, rt_value_M, write_out_M[18:2], MOut_M, Stall_M, rd_sram, wr_sram, /*stall_sram,*/ rd_RAM_M, MemIn_M, hit, read_cpu, write_cpu, not_ready_stall, valid_RD0, valid_RD1);
+	cache_8way_controller cache_2way(MemOp_M, clk, rt_value_M, write_out_M[16:0], MOut_M, Stall_M, rd_sram, wr_sram, /*stall_sram,*/ rd_RAM_M, MemIn_M, hit, read_cpu, write_cpu, lru_RD0, lru_RD1, hit_w0, hit_w1, valid_RD0, valid_RD1, wrtag_en0, wrtag_en1);
 	
 	//SRAM test_sram(clk, Stall_M/* output stall from SRAM */, MemEn_M, ~MemEn_M, write_out_M[18:2], MemIn_M, MOut_M, SRAM_A, SRAM_D, SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n);
-	SRAM test_sram(clk, Stall_M/* output stall from SRAM */, wr_sram, rd_sram, write_out_M[18:2], MemIn_M, MOut_M, SRAM_A, SRAM_D, SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n);
+	SRAM test_sram(clk, Stall_M/* output stall from SRAM */, wr_sram, rd_sram, write_out_M[16:0], MemIn_M, MOut_M, SRAM_A, SRAM_D, SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n);
 	//RAM #(5,32) RamMem(write_out_M[7:2], MemIn_M, clk, MemEn_M, MOut_M);
 	//cache_RAM #(9, 32) test_cache ()
   
@@ -169,13 +169,46 @@ module elec4700(
 //	assign LEDR[6] = stall_sram;
 //	assign LEDR[7] = MemToReg_W;
 //	assign LEDG[7:1] = rd_value_W[6:0];
-assign LEDR[0] = read_cpu;
-assign LEDR[1] = write_cpu;
-assign LEDR[2] = Stall_M; 
+
+//assign LEDR[0] = Flush_E;
+//assign LEDR[1] = Ri;
+//assign LEDR[2] = branchstall_D;
+//assign LEDR[3] = jump_en_D;
+//assign LEDR[4] = jump_check_D;
+//assign LEDR[0] = hit_w0;
+//assign LEDR[1] = hit_w1;
+//assign LEDR[2] = read_cpu;
+//assign LEDR[3] = write_cpu;
+//assign LEDR[4] = lru_RD0;
+//assign LEDR[5] = lru_RD1;
+//assign LEDR[6] = valid_RD0;
+//assign LEDR[7] = valid_RD1;
+//assign LEDR[8] = wrtag_en0;
+//assign LEDR[9] = wrtag_en1;
+
+//assign LEDR[3:0] = MOut_M[3:0];
+//assign LEDR[5] = read_cpu;
+
+//assign LEDG[7] = lru_RD0;
+//assign LEDG[6] = lru_RD1;
+//assign LEDR[6] = read_cpu;
+//assign LEDR[7] = write_cpu;
+//assign LEDG[7] = Stall_M; 
+//assign LEDG[6] = Stall_F_SRAM;
+//assign LEDG[5] = Stall_D_SRAM;
+//assign LEDG[4] = Stall_E_SRAM;
+//assign LEDG[3] = Stall_M_SRAM;
+//assign LEDG[4:1] = rd_RAM_M[3:0];
 assign LEDR[9] = MemToReg_W;
 assign LEDR[8] = MemToReg_M;
 assign LEDR[7] = MemToReg_E;
 assign LEDR[6] = MemToReg_D;
+assign LEDG[1] = lru_RD0;
+assign LEDG[2] = lru_RD1;
+assign LEDG[3] = wrtag_en0;
+assign LEDG[4] = wrtag_en1;
+assign LEDG[5] = valid_RD0;
+assign LEDG[6] = valid_RD1;
   
 endmodule
 

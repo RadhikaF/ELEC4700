@@ -25,20 +25,23 @@ module cache_8way_controller (
 	output logic [31:0] data_tocpu,	//data to send to cpu
 	output logic [31:0] data_tosram, //data to sram
 	output logic hit,
-	output logic rd_cpu, wr_cpu, not_ready_stall, valid_RD0, valid_RD1
+	output logic rd_cpu, wr_cpu, lru_RD0, lru_RD1, hit_w0, hit_w1, valid_RD0, valid_RD1, wrtag_en0, wrtag_en1
 );
 	
 	logic [10:0] tag_WD0, tag_WD1, tag_no, tag_RD0, tag_RD1; 
-	logic valid_WD0, valid_WD1, lru_WD0, lru_WD1, wrtag_en0, wrtag_en1, wrvalid_en0, wrvalid_en1, wrdata_en0, wrdata_en1, wrlru_en0, wrlru_en1, /*valid_RD0, valid_RD1,*/ lru_RD0, lru_RD1;
+	logic valid_WD0, valid_WD1, lru_WD0, lru_WD1, /*wrtag_en0, wrtag_en1,*/ wrvalid_en0, wrvalid_en1, wrdata_en0, wrdata_en1, wrlru_en0, wrlru_en1/*, valid_RD0, valid_RD1, lru_RD0, lru_RD1*/;
 	logic [31:0] data_WD0, data_WD1, read_data, data_RD0, data_RD1;
 	logic [5:0] set_no;
-	logic hit_w0, hit_w1;
+//	logic hit_w0, hit_w1;
 	
 	//logic rd_cpu, wr_cpu;	//read and write signals from CPU logic
-	//logic not_ready_stall;
+//	logic not_ready_stall;
 	
 //	assign stall_cpu = (rd_cpu | wr_cpu)? (not_ready_stall | ready_sram): 1'b0;
 	//if not_ready_stall = 1, then sram is busy, so stall current processor.
+	
+	assign cache_data = (hit_w0)? data_RD0 : data_RD1;	
+	assign data_tocpu = hit? cache_data : data_fromsram;
 	
 	//set number
 	assign set_no = addr_cpu[5:0];
@@ -66,17 +69,19 @@ module cache_8way_controller (
 	
 	assign rd_cpu = F[4] & ~F[3] & ~F[2] & F[1] & F[0];
 	assign wr_cpu = F[4] & F[3] & ~F[2] & F[1] & F[0];
-	
+	/*each way has lru bit, bit is set when way accessed, 
+	when all bits set, all except currently accessed bit are reset, 
+	when block replaced, randomly choose block in way with bit off.*/
 	always_comb begin
 		//Defaults
-		data_tocpu = data_RD0;
+//		data_tocpu = data_RD0;
 		lru_WD0 = 1'b0;
 		lru_WD1 = 1'b0;
 		wrlru_en0 = 1'b0;
 		wrlru_en1 = 1'b0;
 		rd_sram = 1'b0;
 		wr_sram = 1'b0;
-		not_ready_stall = 1'b0;
+//		not_ready_stall = 1'b0;
 		tag_WD0 = tag_no;
 		tag_WD1 = tag_no;
 		wrtag_en0 = 1'b0;
@@ -94,75 +99,78 @@ module cache_8way_controller (
 		//check for cache miss/hit
 		if (hit) begin	//if a hit
 			if (hit_w0) begin		//find out which way was hit
-				data_tocpu = data_RD0;		//transfer data from the way
+//				data_tocpu = data_RD0;		//transfer data from the way
 				lru_WD0 = 1'b1;				//set LRU bit of the way
 				wrlru_en0 = 1'b1;
 				if (lru_RD1) begin		//AND with the other ways once more are added
 				 lru_WD1 = 1'b0;
 				 wrlru_en1 = 1'b1;
 				end
-				else begin
-					wrlru_en1 = 1'b0;
-				end
+//				else begin
+//					wrlru_en1 = 1'b0;
+//				end
 			end
 			else if (hit_w1) begin //else if (hit_w1)
-				data_tocpu = data_RD1;
+//				data_tocpu = data_RD1;
 				lru_WD1 = 1'b1;
 				wrlru_en1 = 1'b1;
 				if (lru_RD0) begin		//AND with the other ways once more are added
 				 lru_WD0 = 1'b0;
 				 wrlru_en0 = 1'b1;
 				end
-				else begin
-					wrlru_en0 = 1'b0;
-				end
+//				else begin
+//					wrlru_en0 = 1'b0;
+//				end
 			end
 		end
 		else begin	//if miss, fetch from memory
 			//if (~sram_stalled)	begin	//check if sram ready to receive signal
 				rd_sram = 1'b1;		//send read signal
 				wr_sram = 1'b0;
-				data_tocpu = data_fromsram;
-				not_ready_stall = 1'b0;
+//				data_tocpu = data_fromsram;
+//				not_ready_stall = 1'b0;
 				//write data to cache
-				if (lru_RD0) begin		//according to lru bit, update tag, data and valid, lru
-					tag_WD0 = tag_no;
-					wrtag_en0 = 1'b1;
-					valid_WD0 = 1'b1;
-					wrvalid_en0 = 1'b1;
-					data_WD0 = data_fromsram;
-					wrdata_en0 = 1'b1;
-					lru_WD0 = 1'b1;
-					wrlru_en0 = 1'b1;
-					if (lru_RD1) begin
-						lru_WD1 = 1'b0;
-						wrlru_en1 = 1'b1;
-					end
-					else begin
-						wrlru_en1 = 1'b0;
-					end
-				end
-				else if (lru_RD1) begin //else if (lru_RD1) 
-					tag_WD1 = tag_no;
-					wrtag_en1 = 1'b1;
-					valid_WD1 = 1'b1;
-					wrvalid_en1 = 1'b1;
-					data_WD1 = data_fromsram;
-					wrdata_en1 = 1'b1;
-					lru_WD1 = 1'b1;
-					wrlru_en1 = 1'b1;
-					if (lru_RD0) begin			//do for other ways are well once 8-way)
-						lru_WD0 = 1'b0;
+				//if lru bit is off, then write to that
+				if (~sram_stalled) begin
+					if (~lru_RD0) begin		//If way 0 has lru bit off, then write to that way and set the lru bit: according to lru bit, update tag, data and valid, lru
+						tag_WD0 = tag_no;
+						wrtag_en0 = 1'b1;
+						valid_WD0 = 1'b1;
+						wrvalid_en0 = 1'b1;
+						data_WD0 = data_fromsram;
+						wrdata_en0 = 1'b1;
+						lru_WD0 = 1'b1;
 						wrlru_en0 = 1'b1;
+						if (lru_RD1) begin
+							lru_WD1 = 1'b0;
+							wrlru_en1 = 1'b1;
+						end
+	//					else begin
+	//						wrlru_en1 = 1'b0;
+	//					end
 					end
-					else begin
-						wrlru_en0 = 1'b0;
+					else if (~lru_RD1) begin //else if (lru_RD1) 
+						tag_WD1 = tag_no;
+						wrtag_en1 = 1'b1;
+						valid_WD1 = 1'b1;
+						wrvalid_en1 = 1'b1;
+						data_WD1 = data_fromsram;
+						wrdata_en1 = 1'b1;
+						lru_WD1 = 1'b1;
+						wrlru_en1 = 1'b1;
+						if (lru_RD0) begin			//do for other ways are well once 8-way)
+							lru_WD0 = 1'b0;
+							wrlru_en0 = 1'b1;
+						end
+	//					else begin
+	//						wrlru_en0 = 1'b0;
+	//					end
 					end
 				end
 			//end
-			else begin //sram is not ready to receive signal, so wait??
-				not_ready_stall = 1'b1;
-			end
+//			else begin //sram is not ready to receive signal, so wait??
+//				not_ready_stall = 1'b1;
+//			end
 		end
 	end
 	else if (wr_cpu) begin		//if cpu wants to write
@@ -181,21 +189,21 @@ module cache_8way_controller (
 //		end
 		if (hit) begin		//if cache hit, write to cache
 			if(hit_w0) begin		//if the hit was from way 0						
-			tag_WD0 = tag_no;
-			wrtag_en0 = 1'b1;
-			valid_WD0 = 1'b1;
-			wrvalid_en0 = 1'b1;
-			data_WD0 = data_fromcpu;
-			wrdata_en0 = 1'b1;
-			lru_WD0 = 1'b1;
-			wrlru_en0 = 1'b1;
+				tag_WD0 = tag_no;
+				wrtag_en0 = 1'b1;
+				valid_WD0 = 1'b1;
+				wrvalid_en0 = 1'b1;
+				data_WD0 = data_fromcpu;
+				wrdata_en0 = 1'b1;
+				lru_WD0 = 1'b1;
+				wrlru_en0 = 1'b1;
 				if (lru_RD1) begin
 					lru_WD1 = 1'b0;
 					wrlru_en1 = 1'b1;
 				end
-				else begin
-					wrlru_en1 = 1'b0;
-				end
+//				else begin
+//					wrlru_en1 = 1'b0;
+//				end
 			end
 			else if (hit_w1) begin		//if(hit_w1): if the hit was from way 1						
 			tag_WD1 = tag_no;
@@ -210,21 +218,21 @@ module cache_8way_controller (
 					lru_WD0 = 1'b0;
 					wrlru_en0 = 1'b1;
 				end
-				else begin
-					wrlru_en0 = 1'b0;
-				end
+//				else begin
+//					wrlru_en0 = 1'b0;
+//				end
 			end
 		end
-		else begin
-			wrtag_en0 = 1'b0;
-			wrtag_en1 = 1'b0;
-			wrvalid_en0 = 1'b0;
-			wrvalid_en1 = 1'b0;
-			wrdata_en0 = 1'b0;
-			wrdata_en1 = 1'b0;
-			wrlru_en0 = 1'b0;
-			wrlru_en1 = 1'b0;
-		end
+//		else begin
+//			wrtag_en0 = 1'b0;
+//			wrtag_en1 = 1'b0;
+//			wrvalid_en0 = 1'b0;
+//			wrvalid_en1 = 1'b0;
+//			wrdata_en0 = 1'b0;
+//			wrdata_en1 = 1'b0;
+//			wrlru_en0 = 1'b0;
+//			wrlru_en1 = 1'b0;
+//		end
 	end
 	else begin //if cpu doesn't want to read or write, disable all control signals
 		wrtag_en0 = 1'b0;
