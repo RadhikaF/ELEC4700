@@ -3,8 +3,8 @@
 // FIRST IMPLEMENTATION IS 2-WAY
 
 //read data - read the tag registers at set_no address and output all their tags (for each way)
-/* assign #sets = 6 //64 sets - need 6 bits
-	assign tag_width = 4'd11 //17-6 = 11 bits
+/* assign #sets = 8 //256 sets - need 8 bits
+	assign tag_width = 4'd11 //17-8 = 9 bits
 	assign data_width = 6'd32 //32 bit
 	assign valid_width = 1'b1;
 	assign LRU_width = 1'b1; */
@@ -44,24 +44,24 @@ module cache_8way_controller (
 	assign data_tocpu = hit? cache_data : data_fromsram;
 	
 	//set number
-	assign set_no = addr_cpu[5:0];
-	assign tag_no = addr_cpu[16:6];
+	assign set_no = addr_cpu[7:0];
+	assign tag_no = addr_cpu[16:8];
 	
 	//Tag registers
-	cache_RAM #(6, 11) tag_way0(set_no, tag_WD0, clk, wrtag_en0, tag_RD0);
-	cache_RAM #(6, 11) tag_way1(set_no, tag_WD1, clk, wrtag_en1, tag_RD1);
+	cache_RAM #(8, 9) tag_way0(set_no, tag_WD0, clk, wrtag_en0, tag_RD0);
+	cache_RAM #(8, 9) tag_way1(set_no, tag_WD1, clk, wrtag_en1, tag_RD1);
 	
 	//Valid registers
-	cache_1bit_RAM #(6) valid_way0(set_no, valid_WD0, clk, wrvalid_en0, valid_RD0);
-	cache_1bit_RAM #(6) valid_way1(set_no, valid_WD1, clk, wrvalid_en1, valid_RD1);
+	cache_1bit_RAM #(8) valid_way0(set_no, valid_WD0, clk, wrvalid_en0, valid_RD0);
+	cache_1bit_RAM #(8) valid_way1(set_no, valid_WD1, clk, wrvalid_en1, valid_RD1);
 	
 	//Data registers
-	cache_RAM #(6, 32) data_way0(set_no, data_WD0, clk, wrdata_en0, data_RD0);
-	cache_RAM #(6, 32) data_way1(set_no, data_WD1, clk, wrdata_en1, data_RD1);
+	cache_RAM #(8, 32) data_way0(set_no, data_WD0, clk, wrdata_en0, data_RD0);
+	cache_RAM #(8, 32) data_way1(set_no, data_WD1, clk, wrdata_en1, data_RD1);
 	
 	//LRU registers
-	cache_1bit_RAM #(6) LRU_way0(set_no, lru_WD0, clk, wrlru_en0, lru_RD0);
-	cache_1bit_RAM #(6) LRU_way1(set_no, lru_WD1, clk, wrlru_en1, lru_RD1);
+	cache_1bit_RAM #(8) LRU_way0(set_no, lru_WD0, clk, wrlru_en0, lru_RD0);
+	cache_1bit_RAM #(8) LRU_way1(set_no, lru_WD1, clk, wrlru_en1, lru_RD1);
 	
 	assign hit_w0 = valid_RD0 & (tag_no == tag_RD0);
 	assign hit_w1 = valid_RD1 & (tag_no == tag_RD1);
