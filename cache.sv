@@ -28,10 +28,10 @@ module cache_8way_controller (
 	output logic rd_cpu, wr_cpu, lru_RD0, lru_RD1, hit_w0, hit_w1, valid_RD0, valid_RD1, wrtag_en0, wrtag_en1
 );
 	
-	logic [10:0] tag_WD0, tag_WD1, tag_no, tag_RD0, tag_RD1; 
+	logic [8:0] tag_WD0, tag_WD1, tag_no, tag_RD0, tag_RD1; 
 	logic valid_WD0, valid_WD1, lru_WD0, lru_WD1, /*wrtag_en0, wrtag_en1,*/ wrvalid_en0, wrvalid_en1, wrdata_en0, wrdata_en1, wrlru_en0, wrlru_en1/*, valid_RD0, valid_RD1, lru_RD0, lru_RD1*/;
 	logic [31:0] data_WD0, data_WD1, read_data, data_RD0, data_RD1;
-	logic [5:0] set_no;
+	logic [7:0] set_no;
 //	logic hit_w0, hit_w1;
 	
 	//logic rd_cpu, wr_cpu;	//read and write signals from CPU logic
