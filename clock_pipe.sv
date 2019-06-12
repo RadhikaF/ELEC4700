@@ -139,10 +139,11 @@ module elec4700(
 	
 	//***Memory***//
 	logic stall_sram, rd_sram, wr_sram;
-	logic hit, read_cpu, write_cpu, lru_RD0, lru_RD1, hit_w0, hit_w1, valid_RD0, valid_RD1, wrtag_en0, wrtag_en1;
+	logic hit, read_cpu, write_cpu, hit_w0, hit_w1, hit_w2, hit_w3, lru_RD0, lru_RD1, lru_RD2, lru_RD3, wrdata_en0, wrdata_en1, wrdata_en2, wrdata_en3, error;
 	// = base + offset = [rs] + signimm
 	//Memory mem(MemToReg_M, MemOp_M, write_out_M[1:0], rt_value_M, MOut_M, rd_RAM_M, MemIn_M, MemEn_M);
-	cache_8way_controller cache_2way(MemOp_M, clk, rt_value_M, write_out_M[16:0], MOut_M, Stall_M, rd_sram, wr_sram, /*stall_sram,*/ rd_RAM_M, MemIn_M, hit, read_cpu, write_cpu, lru_RD0, lru_RD1, hit_w0, hit_w1, valid_RD0, valid_RD1, wrtag_en0, wrtag_en1);
+	cache_4way_controller cache_2way(MemOp_M, clk, rt_value_M, write_out_M[16:0], MOut_M, Stall_M, rd_sram, wr_sram, /*stall_sram,*/ rd_RAM_M, MemIn_M, hit, read_cpu, write_cpu, 
+	hit_w0, hit_w1, hit_w2, hit_w3, lru_RD0, lru_RD1, lru_RD2, lru_RD3, wrdata_en0, wrdata_en1, wrdata_en2, wrdata_en3, error);
 	
 	//SRAM test_sram(clk, Stall_M/* output stall from SRAM */, MemEn_M, ~MemEn_M, write_out_M[18:2], MemIn_M, MOut_M, SRAM_A, SRAM_D, SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n);
 	SRAM test_sram(clk, Stall_M/* output stall from SRAM */, wr_sram, rd_sram, write_out_M[16:0], MemIn_M, MOut_M, SRAM_A, SRAM_D, SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n);
@@ -199,16 +200,21 @@ module elec4700(
 //assign LEDG[4] = Stall_E_SRAM;
 //assign LEDG[3] = Stall_M_SRAM;
 //assign LEDG[4:1] = rd_RAM_M[3:0];
-assign LEDR[9] = MemToReg_W;
-assign LEDR[8] = MemToReg_M;
-assign LEDR[7] = MemToReg_E;
-assign LEDR[6] = MemToReg_D;
+assign LEDR[9] = rd_sram;
+assign LEDR[8] = wr_sram;
+
+assign LEDR[0] = wrdata_en0;
+assign LEDR[1] = wrdata_en1;
+assign LEDR[2] = wrdata_en2;
+assign LEDR[3] = wrdata_en3;
+assign LEDR[4] = error;
+
+//wrdata_en0, wrdata_en1, wrdata_en2, wrdata_en3, error
 assign LEDG[1] = lru_RD0;
 assign LEDG[2] = lru_RD1;
-assign LEDG[3] = wrtag_en0;
-assign LEDG[4] = wrtag_en1;
-assign LEDG[5] = valid_RD0;
-assign LEDG[6] = valid_RD1;
+assign LEDG[3] = lru_RD2;
+assign LEDG[4] = lru_RD3;
+assign LEDR[7] = hit;
   
 endmodule
 
