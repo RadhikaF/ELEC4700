@@ -1,0 +1,19 @@
+addiu $10, $31, 4
+addiu $11, $31, 0
+addiu $2, $31, 0
+addiu $3, $31, 4
+addiu $4, $31, 8
+addiu $12, $31, 16
+lw $0, $2, 0
+addiu $12, $31, 1
+lw $1, $3, 0
+mult $0, $1
+mflo $5
+sw $5, $4, 0
+addiu $11, $11, 1
+addiu $4, $4, 1
+addiu $2, $2, 1
+addiu $3, $3, 1
+bne $10, $11, -10
+addiu $15, $10, 5
+blank 

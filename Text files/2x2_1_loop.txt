@@ -1,0 +1,21 @@
+addiu $13, $31, 2
+addu $0, $31, $31
+//////////-/ loops rows/columns to multiply and add (0-2)
+addu $23, $24, $25
+addu $23, $24, $25
+lw $6, $11, 0
+addu $23, $24, $25
+addiu $0, $0, 1
+lw $7, $12, 0
+addiu $11, $11, 2
+mult $6, $7
+lw $9, $10, 4
+mflo $8
+addu $9, $9, $8
+addiu $12, $12, 1
+sw $9, $10, 4
+addu $23, $24, $25
+bne $13, $0, -12
+////////////////////-///
+addiu $15, $0, 0
+blank 
