@@ -19,22 +19,26 @@ module elec4700(
 	logic [31:0] q;		// clock stuff
 	logic clk;
 	//assign clk = q[25];     // Uncomment these lines and choose the appropriate bit of q if a slower clock is needed
-	//assign clk = CLOCK_125_p;
-	assign clk = KEY[0];
-   assign LEDG[0] = clk;   // Can see the clock if it is slow enough
+	assign clk = (SW[9] & CLOCK_50_B5B);
+	//assign clk = KEY[0];
+    assign LEDG[0] = clk;   // Can see the clock if it is slow enough
+	//assign clk = q[25];
 	
-	logic P0_stall, P1_stall, P0_wr, P0_rd, P1_wr, P1_rd, sram_status, sram_WE, sram_RE;
+	logic P0_stall, P1_stall, P0_wr, P0_rd, P1_wr, P1_rd, sram_status, sram_WE, sram_RE, cpu_done_final;
 	logic [31:0] MOut_M, P0_WD, P1_WD, sram_WD;
 	logic [16:0] P0_addr, P1_addr, sram_addr;
 	logic MemToReg_D, MemToReg_E, MemToReg_M, MemToReg_W,
 		MemToReg_D1, MemToReg_E1, MemToReg_M1, MemToReg_W1;
 	
 	logic [6:0] HEX01, HEX11, HEX21, HEX31;
-	cpu0 core0(clk, P0_stall, MOut_M, P0_wr, P0_rd, P0_addr, P0_WD, HEX01,HEX11,HEX21,HEX31, MemToReg_D, MemToReg_E, MemToReg_M, MemToReg_W);
+	cpu0 core0(clk, P0_stall, MOut_M, P0_wr, P0_rd, P0_addr, P0_WD, HEX01,HEX11,HEX21,HEX31, MemToReg_D, MemToReg_E, MemToReg_M, MemToReg_W, cpu_done_M1);
 	
-	cpu1 core1(clk, P1_stall, MOut_M, P1_wr, P1_rd, P1_addr, P1_WD, HEX0,HEX1,HEX2,HEX3, MemToReg_D1, MemToReg_E1, MemToReg_M1, MemToReg_W1);
+	cpu1 core1(clk, P1_stall, MOut_M, P1_wr, P1_rd, P1_addr, P1_WD, HEX0,HEX1,HEX2,HEX3, MemToReg_D1, MemToReg_E1, MemToReg_M1, MemToReg_W1, cpu_done_M2);
 
 	logic P0_using, P1_using;
+	
+	//this for when Kenrick's new SRAM is implemented, probably best to test that this still works first before adding that
+	//assign cpu_done_final = cpu_done_M1 & cpu_done_M2;
 		
 	assign P0_stall = (P0_request & sram_status) | (P0_request & using);
 	assign P1_stall =  (P1_request & sram_status) | (P1_request & ~using);
