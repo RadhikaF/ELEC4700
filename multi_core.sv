@@ -6,7 +6,7 @@ module elec4700(
 	input logic [9:0] SW,
 	input logic [3:0] KEY,
 	//input logic CLOCK_27,
-	//input logic CLOCK_125_p,
+	input logic CLOCK_50_B5B,
 	output logic [9:0] LEDR,
 	output logic [7:0] LEDG,
 	output logic [6:0] HEX0,HEX1,HEX2,HEX3,
