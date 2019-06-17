@@ -3,9 +3,16 @@
 
 def main():
     print ("hello world")
-    machine = open("C:\\ELEC4700\\machine_code.txt", "r")
-    output = open("C:\\ELEC4700\\machine_output.txt", "w")
-    contents = machine.readlines()
+    machine1 = open("C:\\ELEC4700\\quartus_2019_06_15\\machine_code_cpu0.txt", "r")
+    output1 = open("C:\\ELEC4700\\quartus_2019_06_15\\machine_output_cpu0.txt", "w")
+    contents1 = machine1.readlines()
+    machine2 = open("C:\\ELEC4700\\quartus_2019_06_15\\machine_code_cpu1.txt", "r")
+    output2 = open("C:\\ELEC4700\\quartus_2019_06_15\\machine_output_cpu1.txt", "w")
+    contents2 = machine2.readlines()
+    core(contents1, output1)
+    core(contents2, output2)
+
+def core(contents, output):
     for line in contents:
         line = line.replace("\r","")
         line = line.replace("\n","")

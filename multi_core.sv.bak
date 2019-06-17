@@ -6,17 +6,14 @@ module elec4700(
 	input logic [9:0] SW,
 	input logic [3:0] KEY,
 	//input logic CLOCK_27,
-	input logic CLOCK_50_B5B,
+	//input logic CLOCK_125_p,
 	output logic [9:0] LEDR,
 	output logic [7:0] LEDG,
 	output logic [6:0] HEX0,HEX1,HEX2,HEX3,
-	//SRAM
+	
 	output [17:0] SRAM_A,
 	inout [15:0] SRAM_D,
-	output SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n,
-	//Serial interface
-	input UART_RX,
-	output UART_TX
+	output SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n
 );
 
 	logic [31:0] q;		// clock stuff
@@ -34,13 +31,14 @@ module elec4700(
 		MemToReg_D1, MemToReg_E1, MemToReg_M1, MemToReg_W1;
 	
 	logic [6:0] HEX01, HEX11, HEX21, HEX31;
-	cpu0 core0(clk, P0_stall, MOut_M, P0_wr, P0_rd, P0_addr, P0_WD, HEX01, HEX11, HEX21, HEX31, MemToReg_D, MemToReg_E, MemToReg_M, MemToReg_W, cpu_done_M1);
-	cpu1 core1(clk, P1_stall, MOut_M, P1_wr, P1_rd, P1_addr, P1_WD, HEX0, HEX1, HEX2, HEX3, MemToReg_D1, MemToReg_E1, MemToReg_M1, MemToReg_W1, cpu_done_M2);
+	cpu0 core0(clk, P0_stall, MOut_M, P0_wr, P0_rd, P0_addr, P0_WD, HEX01,HEX11,HEX21,HEX31, MemToReg_D, MemToReg_E, MemToReg_M, MemToReg_W, cpu_done_M1);
+	
+	cpu1 core1(clk, P1_stall, MOut_M, P1_wr, P1_rd, P1_addr, P1_WD, HEX0,HEX1,HEX2,HEX3, MemToReg_D1, MemToReg_E1, MemToReg_M1, MemToReg_W1, cpu_done_M2);
 
 	logic P0_using, P1_using;
 	
 	//this for when Kenrick's new SRAM is implemented, probably best to test that this still works first before adding that
-	assign cpu_done_final = cpu_done_M1 & cpu_done_M2;
+	//assign cpu_done_final = cpu_done_M1 & cpu_done_M2;
 		
 	assign P0_stall = (P0_request & sram_status) | (P0_request & using);
 	assign P1_stall =  (P1_request & sram_status) | (P1_request & ~using);
@@ -70,8 +68,7 @@ module elec4700(
 		end
 	end
 	
-	SRAM test_sram(clk, sram_status/* output stall from SRAM */, cpu_done_final, sram_WE, sram_RE, sram_addr, sram_WD, MOut_M, 
-			SRAM_A, SRAM_D, SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n, UART_RX, UART_TX);
+	SRAM test_sram(clk, sram_status/* output stall from SRAM */, sram_WE, sram_RE, sram_addr, sram_WD, MOut_M, SRAM_A, SRAM_D, SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n);
   	
 	assign LEDR[0] = P0_stall;
 	assign LEDR[1] = P1_stall;

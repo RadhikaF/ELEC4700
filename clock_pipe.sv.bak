@@ -2,7 +2,7 @@
 // Joshua Beverley & Radhika Feron
 // Main module file (clock_pipe.sv), clock, registers
 
-module ELEC4700(
+module elec4700(
 	input logic [9:0] SW,
 	input logic [3:0] KEY,
 	//input logic CLOCK_27,
