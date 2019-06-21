@@ -34,7 +34,7 @@ def magicPanic(magicNumber):
 def generateA(n):
 	#Generate random test matrix
 	maxNum32 = 2 ** 32 - 1
-	maxMatrixCell = 8#int(math.sqrt(maxNum32 / n))
+	maxMatrixCell = int(math.sqrt(maxNum32 / n))
 	#print('Maximum cell value: ' + str(maxMatrixCell))
 	return np.random.randint(0, maxMatrixCell, size=(n,n), dtype=np.uint32)
 
@@ -179,7 +179,7 @@ if __name__ == '__main__':
 		read:		read the content of the SRAM.
 		time:		read the timer that measures how many cycles your cpu has taken.''')
 	parser.add_argument('-n', help='Size of the matrix to generate (n * n), default=64', default=64, dest='n')
-	parser.add_argument('-p', '--port', help='The serial port to connect to the board over, default=COM5', default='COM5', dest='port')
+	parser.add_argument('-p', '--port', help='The serial port to connect to the board over, default=COM6', default='COM6', dest='port')
 	parser.add_argument('-e', '--executable', help='''Only used if you are loading your program from the SRAM (instead of a ROM inside the FPGA), this is the path to text file containing 
 		the binary words (each line should be 32 bits) to be written to SRAM after the two matrices''', default=None, dest='executable')
 	args = parser.parse_args()
