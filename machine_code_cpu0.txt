@@ -1,8 +1,13 @@
-addiu $4, $31, 4096
-sw $31, $4, 0
-addiu $14, $31, 32
-addiu $12, $31, 64
-addiu $10, $31, 64
+addiu $4, $31, 256
+sw $31, $8, 256
+addiu $8, $8, 1
+bne $8, $4, -2
+addiu $20, $31, 4
+addiu $18, $31, 4
+addiu $16, $31, 4
+addiu $14, $31, 4
+addiu $12, $31, 4
+addiu $10, $31, 4
 lw $0, $2, 0
 addiu $11, $11, 1
 lw $1, $3, 0
@@ -10,21 +15,46 @@ mult $0, $1
 mflo $5
 lw $7, $4, 0
 addu $6, $5, $7
-addiu $2, $2, 64
-addiu $3, $3, 64
+addi $2, $2, 16
+addi $3, $3, 16
 sw $6, $4, 0
 bne $10, $11, -10
 addiu $13, $13, 1
 addiu $11, $31, 0
-addiu $4, $4, 1
-sw $31, $4, 0
-addi $2, $2, -4095
-addi $3, $3, -4096
-bne $12, $13, -17
+addi $4, $4, 1
+addi $2, $2, -63
+addi $3, $3, -64
+bne $12, $13, -16
 addiu $15, $15, 1
 addiu $13, $31, 0
-addi $2, $2, -64
+addi $4, $4, 12
+addi $2, $2, -4
 addi $3, $3, 1
 bne $14, $15, -22
-addiu $16, $10, 5
+addiu $17, $17, 1
+addiu $15, $31, 0
+addi $4, $4, -64
+addi $2, $2, 64
+addi $3, $3, 60
+bne $16, $17, -28
+addiu $19, $19, 1
+addiu $17, $31, 0
+addi $4, $4, 4
+addi $2, $2, -256
+addi $3, $3, -252
+bne $18, $19, -34
+addiu $21, $21, 1
+addiu $19, $31, 0
+//addi $4, $4, 
+addi $2, $2, 4
+addi $3, $3, -64
+bne $20, $21, -39
+addiu $30, $0, 5
+blank 
+blank 
+blank 
+blank 
+blank 
+blank 
+blank 
 blank 
