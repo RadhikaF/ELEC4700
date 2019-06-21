@@ -61,7 +61,19 @@ module cpu0(
 	counter32 #(6) clock(clk, Stall_F_SRAM, jump_check_D, blank_F, pc_F, pc_out, pc_F);
 	ROM_test0 #(6,32) myrom(pc_F,instruction_F);		// gets instruction from text file
 	assign blank_F = ~(|instruction_F);
-	assign cpu_done_F = blank_F;
+	
+	initial begin
+		cpu_done_F <= 1'b0;
+		cpu_done_D <= 1'b0;
+		cpu_done_E <= 1'b0;
+		cpu_done_M <= 1'b0;
+	end
+	
+	always_ff @(posedge clk) begin
+		if (~cpu_done_F) begin
+			cpu_done_F <= blank_F;
+		end
+	end
 
 	// Fetch to Decode on Clock edge
 	FDRegister FDReg(clk, Stall_D_SRAM, jump_check_D, cpu_done_F, pc_F, instruction_F, pc_D, instruction_D, Jump_Flush_D, cpu_done_D);
@@ -202,7 +214,19 @@ module cpu1(
 	counter32 #(6) clock(clk, Stall_F_SRAM, jump_check_D, blank_F, pc_F, pc_out, pc_F);
 	ROM_test1 #(6,32) myrom(pc_F,instruction_F);		// gets instruction from text file
 	assign blank_F = ~(|instruction_F);
-	assign cpu_done_F = blank_F;
+	
+	initial begin
+		cpu_done_F <= 1'b0;
+		cpu_done_D <= 1'b0;
+		cpu_done_E <= 1'b0;
+		cpu_done_M <= 1'b0;
+	end
+	
+	always_ff @(posedge clk) begin
+		if (~cpu_done_F) begin
+			cpu_done_F <= blank_F;
+		end
+	end
 
 	// Fetch to Decode on Clock edge
 	FDRegister FDReg(clk, Stall_D_SRAM, jump_check_D, cpu_done_F, pc_F, instruction_F, pc_D, instruction_D, Jump_Flush_D, cpu_done_D);
@@ -296,14 +320,13 @@ module FDRegister(
 			PCD <= 6'd0;
 			instruction_D <= 32'd0;
 			JumpFlush_D <= 1'b1;
-			cpu_done_D <= 1'b0;
 		end //if (clr)
 		else if(~en) begin
 			PCD <= PCF;
 			instruction_D <= instruction_F;
-			cpu_done_D <= cpu_done_F;
 			JumpFlush_D <= 1'b0;
 		end
+		cpu_done_D <= cpu_done_F;
 	end
 endmodule // FDRegister
 
@@ -378,7 +401,6 @@ module DERegister(
 			AluSrc1_E <= 1'b0;
 			AluSrc0_E <= 1'b0;
 			forwarding_disable_rs_E <= 1'b0;
-			cpu_done_E <= 1'b0;
 		end
 		else if (~en) begin
 			WriteRAE <= WriteRAD;
@@ -404,8 +426,8 @@ module DERegister(
 			AluSrc1_E <= AluSrc1_D;
 			AluSrc0_E <= AluSrc0_D;
 			forwarding_disable_rs_E <= forwarding_disable_rs_D;
-			cpu_done_E <= cpu_done_D;
 		end // else	
+		cpu_done_E <= cpu_done_D;
 	end
 endmodule // DERegister
 

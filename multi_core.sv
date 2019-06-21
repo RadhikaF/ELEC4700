@@ -24,14 +24,19 @@ module elec4700(
 	//assign clk = q[25];     // Uncomment these lines and choose the appropriate bit of q if a slower clock is needed
 	assign clk = (SW[9] & CLOCK_50_B5B);
 	//assign clk = KEY[0];
-    assign LEDG[0] = clk;   // Can see the clock if it is slow enough
+	assign LEDG[0] = clk;   // Can see the clock if it is slow enough
 	//assign clk = q[25];
 	
-	logic P0_stall, P1_stall, P0_wr, P0_rd, P1_wr, P1_rd, sram_status, sram_WE, sram_RE, cpu_done_final;
+	logic P0_stall, P1_stall, P0_wr, P0_rd, P1_wr, P1_rd, sram_status, sram_WE, sram_RE, cpu_done_final, cpu_done_M1, cpu_done_M2, cpu_prev;
 	logic [31:0] MOut_M, P0_WD, P1_WD, sram_WD;
 	logic [16:0] P0_addr, P1_addr, sram_addr;
 	logic MemToReg_D, MemToReg_E, MemToReg_M, MemToReg_W,
-		MemToReg_D1, MemToReg_E1, MemToReg_M1, MemToReg_W1;
+			MemToReg_D1, MemToReg_E1, MemToReg_M1, MemToReg_W1;
+			
+	initial begin
+		cpu_done_final <= 1'b0;
+		cpu_prev <= 1'b0;
+	end
 	
 	logic [6:0] HEX01, HEX11, HEX21, HEX31;
 	cpu0 core0(clk, P0_stall, MOut_M, P0_wr, P0_rd, P0_addr, P0_WD, HEX01, HEX11, HEX21, HEX31, MemToReg_D, MemToReg_E, MemToReg_M, MemToReg_W, cpu_done_M1);
@@ -40,8 +45,8 @@ module elec4700(
 	logic P0_using, P1_using;
 	
 	//this for when Kenrick's new SRAM is implemented, probably best to test that this still works first before adding that
-	assign cpu_done_final = cpu_done_M1 & cpu_done_M2;
-		
+	assign cpu_done_final = (cpu_done_M1 &	cpu_done_M2) | cpu_prev;
+	
 	assign P0_stall = (P0_request & sram_status) | (P0_request & using);
 	assign P1_stall =  (P1_request & sram_status) | (P1_request & ~using);
 
@@ -68,6 +73,7 @@ module elec4700(
 			else if (P0_request & P1_request) //if request from both P0 and P1
 				using <= ~using; //if P1 using, let P0 use it, and vice versa	
 		end
+		cpu_prev <= cpu_done_final;
 	end
 	
 	SRAM test_sram(clk, sram_status/* output stall from SRAM */, cpu_done_final, sram_WE, sram_RE, sram_addr, sram_WD, MOut_M, 
@@ -88,13 +94,16 @@ module elec4700(
 	assign LEDG[6] = MemToReg_E;
 	assign LEDG[5] = MemToReg_M;
 	assign LEDG[4] = MemToReg_W;
-	assign LEDG[3] = write_accepted0;
-	assign LEDG[2] = write_accepted1;
+	//assign LEDG[3] = write_accepted0;
+	//assign LEDG[2] = write_accepted1;
+	assign LEDG[3] = cpu_done_M1;
+	assign LEDG[2] = cpu_done_M2;
+	assign LEDG[1] = cpu_done_final;
 //	cache_4way_controller cache_2way(MemOp_M, clk, rt_value_M, write_out_M[16:0], MOut_M, Stall_M, rd_sram, wr_sram, rd_RAM_M, MemIn_M);
 	
-	//SRAM test_sram(clk, Stall_M/* output stall from SRAM */, wr_sram, rd_sram, write_out_M[16:0], MemIn_M, MOut_M, SRAM_A, SRAM_D, SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n);
+//	SRAM test_sram(clk, Stall_M/* output stall from SRAM */, wr_sram, rd_sram, write_out_M[16:0], MemIn_M, MOut_M, SRAM_A, SRAM_D, SRAM_CE_n, SRAM_LB_n, SRAM_UB_n, SRAM_OE_n, SRAM_WE_n);
 	
-	
-//  	sram_controller mem(P0_rd, P0_wr, P1_rd, P1_wr, P0_addr, P1_addr, P0_WD, P1_WD,
-//  		sram_status, /*sram_RD,*/ P0_stall,P1_stall, /*P0_data, P1_data,*/ sram_WE, sram_RE,sram_addr,sram_WD, free);
+//  sram_controller mem(P0_rd, P0_wr, P1_rd, P1_wr, P0_addr, P1_addr, P0_WD, P1_WD,
+//  sram_status, /*sram_RD,*/ P0_stall,P1_stall, /*P0_data, P1_data,*/ sram_WE, sram_RE,sram_addr,sram_WD, free);
+
 endmodule
